@@ -7,7 +7,8 @@ TIME="4:00:00"  # Maximum execution time
 
 # Create results and logs directories if they don't exist
 mkdir -p results/
-mkdir -p logs/
+mkdir -p results/logs/
+mkdir -p results/dbs/
 mkdir -p temp/
 
 # Params

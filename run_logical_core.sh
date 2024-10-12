@@ -11,7 +11,8 @@ mkdir -p temp/
 LOGICAL_CORES_LIST=(4 8 12 16 20 24)  # List of logical cores to test
 # Create results and logs directories if they don't exist
 mkdir -p results/
-mkdir -p logs/
+mkdir -p results/logs/
+mkdir -p results/dbs/
 mkdir -p temp/
 
 # Overwrite config.ini file
