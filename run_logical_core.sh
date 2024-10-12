@@ -9,7 +9,10 @@ mkdir -p temp/
 
 # Params
 LOGICAL_CORES_LIST=(4 8 12 16 20 24)  # List of logical cores to test
-TEMP="temp"  # Temporary directory for log files
+# Create results and logs directories if they don't exist
+mkdir -p results/
+mkdir -p logs/
+mkdir -p temp/
 
 # Overwrite config.ini file
 config_file="config.ini"
