@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SLURM Resource configuration
-PARTITION="cluster_short"  # Partition name
+PARTITION="gpu_short"  # Partition name
 TIME="4:00:00"  # Maximum execution time
 
 # Params

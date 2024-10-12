@@ -16,7 +16,7 @@ parser.add_argument('--logical_cores', type=int, required=True, help="Sum of log
 args = parser.parse_args()
 
 # ログファイルの設定
-logfile_name = f"benchmark_log_cores_{args.logical_cores}.log"
+logfile_name = f"benchmark_log_cores_{args.logical_cores}"
 set_logger(LOG_DIR, logfile_name)
 
 # テンソルの次元リスト
