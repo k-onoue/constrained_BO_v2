@@ -4,9 +4,6 @@
 PARTITION="cluster_short"  # Partition name
 TIME="4:00:00"  # Maximum execution time
 
-# Create temp directory if it doesn't exist
-mkdir -p temp/
-
 # Params
 LOGICAL_CORES_LIST=(4 8 12 16 20 24)  # List of logical cores to test
 # Create results and logs directories if they don't exist
