@@ -16,6 +16,8 @@ def set_logger(log_filename_base, save_dir):
         handlers=[logging.FileHandler(log_filepath), logging.StreamHandler(sys.stdout)],
     )
 
+    return log_filename
+
 
 def search_log_files(
     log_dir: str, keywords: list[str], logic: str = "and"
