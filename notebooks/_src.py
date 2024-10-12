@@ -13,10 +13,12 @@ sys.path.append(PROJECT_DIR)
 from src.objectives.warcraft import WarcraftObjective
 from src.samplers.custom import CustomQMCSampler, CustomRandomSampler
 from src.samplers.parafac import ParafacSampler
+from src.utils_experiments import search_log_files
 
 __all__ = [
     "WarcraftObjective",
     "CustomQMCSampler",
     "CustomRandomSampler",
     "ParafacSampler",
+    "search_log_files",
 ]
