@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # SLURM Resource configuration
-CPUS_PER_TASK=4  # Number of CPUs per task
-PARTITION="cluster_long"  # Partition name
-TIME="10:00:00"  # Maximum execution time
+PARTITION="cluster_short"  # Partition name
+TIME="4:00:00"  # Maximum execution time
 
 # Create temp directory if it doesn't exist
 mkdir -p temp/
