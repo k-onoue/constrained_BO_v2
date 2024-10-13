@@ -2,7 +2,7 @@
 bo-env_v2/
 data/
 __pycache__/
-results/
+results*/
 logs/
 logs-archive/
 retrieve.sh
