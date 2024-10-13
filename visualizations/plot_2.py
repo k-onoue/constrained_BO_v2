@@ -127,8 +127,6 @@ if __name__ == '__main__':
         sampler_files, 
         db_folder, 
         output_dir,
-        width=1024,  # Custom width
-        height=768   # Custom height
     )
 
 
