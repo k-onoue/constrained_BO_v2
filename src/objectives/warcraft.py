@@ -174,6 +174,30 @@ class WarcraftObjective:
 
         score = penalty_1 + penalty_3
         return score
+    
+    def check_penalty_type2(self, x):
+        penalty_3 = self.get_penalty_type2(x)
+        return penalty_3 == 0
+    
+    def get_penalty_type2(self, x):
+        if isinstance(x, np.ndarray):
+            direction_matrix = x
+        else:
+            direction_matrix = np.array(x)
+
+        start = (0, 0)
+        goal = (self.shape[0] - 1, self.shape[1] - 1)
+
+        history = navigate_through_matrix(direction_matrix, start, goal)
+
+        if history:
+            penalty_3 = self.calculate_penalty_type2(
+                history[-1], direction_matrix[history[-1]], self.shape
+            )
+        else:
+            penalty_3 = 1
+
+        return penalty_3
 
     def visualize(self, x):
         """Visualize the direction matrix."""
