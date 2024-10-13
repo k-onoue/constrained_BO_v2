@@ -136,8 +136,31 @@ def parse_args():
         action="store_true",
         help="Whether to use unique sampling in the ParafacSampler.",
     )
+    parser.add_argument(
+        "--map_option",
+        type=int,
+        choices=[1, 2, 3],
+        default=1,
+        help="Select the map configuration: 1 for 2x2, 2 for 3x2, 3 for 3x3.",
+    )
 
     return parser.parse_args()
+
+
+def get_map(map_option: int):
+    """
+    Return the map configuration based on the selected option.
+    """
+    if map_option == 1:
+        map_targeted = np.array([[1, 4], [2, 1]])
+    elif map_option == 2:
+        map_targeted = np.array([[1, 4, 1], [2, 1, 1]])
+    elif map_option == 3:
+        map_targeted = np.array([[1, 4, 1], [2, 1, 3], [5, 2, 1]])
+    else:
+        raise ValueError(f"Invalid map option: {map_option}")
+
+    return map_targeted / map_targeted.sum()
 
 
 if __name__ == "__main__":
@@ -147,12 +170,11 @@ if __name__ == "__main__":
     # Parse the command-line arguments
     args = parse_args()
 
-    # Define the target map for optimization
-    map_targeted = np.array([[1, 4], [2, 1]])
-    map_targeted = map_targeted / map_targeted.sum()
+    # Get the map configuration based on the command-line argument
+    map_targeted = get_map(args.map_option)
 
     # Concatenate the sampler type to the script name
-    script_name = f"{base_script_name}_seed{args.seed}"
+    script_name = f"{base_script_name}_map{args.map_option}_seed{args.seed}"
 
     # Set up logging and retrieve the log filename
     log_filename = set_logger(script_name, LOG_DIR)

@@ -18,7 +18,7 @@ for SEED in $(seq $SEED_START $SEED_END); do
 
     # Run the Python script locally and log the output
     echo "Running experiment with seed $SEED..."
-    python3 experiments/2024-10-12/bo_parafac.py \
+    python3 experiments/2024-10-13/bo_parafac.py \
         --seed $SEED \
         --iter_bo $ITER \
         --cp_rank 2 \
@@ -26,5 +26,6 @@ for SEED in $(seq $SEED_START $SEED_END); do
         --cp_mask_ratio 0.1 \
         --cp_random_dist_type uniform \
         --acq_trade_off_param 2.0 \
-        --acq_batch_size 1
+        --acq_batch_size 1 \
+        --map 2 
 done

@@ -6,8 +6,7 @@ from functools import partial
 import numpy as np
 import optuna
 from _src import DB_DIR, LOG_DIR, WarcraftObjective, set_logger
-from optuna.samplers import (BruteForceSampler, QMCSampler, RandomSampler,
-                             TPESampler)
+from optuna.samplers import (BruteForceSampler, RandomSampler, TPESampler, GPSampler)
 
 
 def objective(trial, map_shape, objective_function):
@@ -115,9 +114,16 @@ def parse_args():
     parser.add_argument(
         "--sampler",
         type=str,
-        choices=["random", "qmc", "tpe", "bruteforce"],
+        choices=["random", "tpe", "gp", "bruteforce"],
         default="random",
         help="Sampler for the optimization process.",
+    )
+    parser.add_argument(
+        "--map_option",
+        type=int,
+        choices=[1, 2, 3],
+        default=1,
+        help="Select the map configuration: 1 for 2x2, 2 for 3x2, 3 for 3x3.",
     )
 
     return parser.parse_args()
@@ -129,14 +135,30 @@ def get_sampler(sampler_type: str, seed: int):
     """
     if sampler_type == "random":
         return RandomSampler(seed=seed)
-    elif sampler_type == "qmc":
-        return QMCSampler(seed=seed, qmc_type="sobol")
     elif sampler_type == "tpe":
         return TPESampler(seed=seed)
+    elif sampler_type == "gp":
+        return GPSampler(seed=seed)  # Use GPSampler for GP-based Bayesian Optimization
     elif sampler_type == "bruteforce":
-        return BruteForceSampler()  # Assuming this is a custom sampler
+        return BruteForceSampler()
     else:
         raise ValueError(f"Unsupported sampler type: {sampler_type}")
+
+
+def get_map(map_option: int):
+    """
+    Return the map configuration based on the selected option.
+    """
+    if map_option == 1:
+        map_targeted = np.array([[1, 4], [2, 1]])
+    elif map_option == 2:
+        map_targeted = np.array([[1, 4, 1], [2, 1, 1]])
+    elif map_option == 3:
+        map_targeted = np.array([[1, 4, 1], [2, 1, 3], [5, 2, 1]])
+    else:
+        raise ValueError(f"Invalid map option: {map_option}")
+
+    return map_targeted / map_targeted.sum()
 
 
 if __name__ == "__main__":
@@ -146,12 +168,11 @@ if __name__ == "__main__":
     # Parse the command-line arguments
     args = parse_args()
 
-    # Define the target map for optimization
-    map_targeted = np.array([[1, 4], [2, 1]])
-    map_targeted = map_targeted / map_targeted.sum()
+    # Get the map configuration based on the command-line argument
+    map_targeted = get_map(args.map_option)
 
-    # Concatenate the sampler type to the script name
-    script_name = f"{base_script_name}_{args.sampler}_seed{args.seed}"
+    # Concatenate the sampler type and map option to the script name
+    script_name = f"{base_script_name}_{args.sampler}_map{args.map_option}_seed{args.seed}"
 
     # Set up logging and retrieve the log filename
     log_filename = set_logger(script_name, LOG_DIR)

@@ -4,19 +4,13 @@ import numpy as np
 import logging
 import time
 import random
-import argparse
 
 from _src import LOG_DIR
 from _src import set_logger
 
 
-# コマンドライン引数の設定
-parser = argparse.ArgumentParser(description="CPRank2 decomposition benchmarking with Tensorly.")
-parser.add_argument('--logical_cores', type=int, required=True, help="Sum of logical cores")
-args = parser.parse_args()
-
 # ログファイルの設定
-logfile_name = f"benchmark_log_cores_{args.logical_cores}"
+logfile_name = f"benchmark_log_cores_{}"
 set_logger(LOG_DIR, logfile_name)
 
 # テンソルの次元リスト
