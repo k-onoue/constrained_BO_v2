@@ -2,8 +2,8 @@
 
 # SLURM Resource configuration
 CPUS_PER_TASK=20  # Number of CPUs per task
-PARTITION="cluster_short"  # Partition name
-TIME="4:00:00"  # Maximum execution time
+PARTITION="cluster_long"  # Partition name
+TIME="10:00:00"  # Maximum execution time
 
 # Create results and logs directories if they don't exist
 mkdir -p results/
@@ -29,7 +29,7 @@ ACQ_TRADE_OFF_PARAM=2.0  # Acquisition function trade-off parameter
 ACQ_BATCH_SIZE=1  # Batch size for acquisition function optimization
 
 # Define the list of maps
-MAPS=(1 2)  # You can define these as specific arrays in your Python script
+MAPS=(3)  # You can define these as specific arrays in your Python script
 
 # Overwrite config.ini file
 config_file="config.ini"
