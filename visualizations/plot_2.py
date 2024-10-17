@@ -10,7 +10,7 @@ from _src import WarcraftObjective
 
 
 # Inner function for plotting an individual file
-def plot_individual_file(db_file, sampler, db_folder, output_dir, width, height):
+def plot_individual_file(db_file, sampler, db_folder, output_dir, width, height, map_shape=(2, 2)):
     path = os.path.join(db_folder, db_file)
     storage_url = f"sqlite:///{path}"
 
@@ -32,14 +32,14 @@ def plot_individual_file(db_file, sampler, db_folder, output_dir, width, height)
         study_df['best_value'] = study_df['value'].cummin()
 
     # WarcraftObjective クラスのインスタンスを作成
-    weight_matrix = np.random.rand(2, 2)  # 任意の weight_matrix (適宜変更してください)
+    weight_matrix = np.random.rand(*map_shape)  # 任意の weight_matrix (適宜変更してください)
     objective = WarcraftObjective(weight_matrix)
 
     # 各行に対して penalty_type2 を計算し、新しい列に判定結果を追加
     def check_constraint(row, objective):
         # params から direction_matrix を作成 (前の質問での params 取得方法を使用)
         params_columns = [col for col in row.index if col.startswith('params_')]
-        direction_matrix = np.array([row[col] for col in params_columns]).reshape(2, 2)  # 2x2 の例、適宜調整してください
+        direction_matrix = np.array([row[col] for col in params_columns]).reshape(map_shape)  # 2x2 の例、適宜調整してください
 
         return objective.check_penalty_type2(direction_matrix)
 
@@ -100,33 +100,69 @@ def plot_individual_file(db_file, sampler, db_folder, output_dir, width, height)
 
 
 # Function to generate and save individual optimization history plots with customizable size
-def plot_and_save_individual_histories(sampler_files, db_folder, output_dir, width=800, height=600):
+def plot_and_save_individual_histories(sampler_files, db_folder, output_dir, width=800, height=600, map_shape=(2, 2)):
     # Loop over each sampler and its file list
     for sampler, db_files in sampler_files.items():
         # Loop over each file (which corresponds to different seeds)
         for db_file in db_files:
-            plot_individual_file(db_file, sampler, db_folder, output_dir, width, height)
+            plot_individual_file(db_file, sampler, db_folder, output_dir, width, height, map_shape)
 
 
 
 # Usage example
 if __name__ == '__main__':
-    result_path = "/Users/keisukeonoue/ws/constrained_BO_v2/results_2024-10-12"
+    result_path = "/Users/keisukeonoue/ws/constrained_BO_v2/results"
     db_folder = os.path.join(result_path, "dbs")
     output_dir = os.path.join(result_path, "images")
 
+    # sampler_files = {
+    #     "random": ['2024-10-12_15-27-35_bo_benchmark_random_seed0.db', '2024-10-12_15-27-44_bo_benchmark_random_seed1.db', '2024-10-12_15-27-53_bo_benchmark_random_seed2.db', '2024-10-12_15-28-02_bo_benchmark_random_seed3.db', '2024-10-12_15-28-10_bo_benchmark_random_seed4.db'],
+    #     "tpe": ['2024-10-12_15-29-04_bo_benchmark_tpe_seed0.db', '2024-10-12_15-29-15_bo_benchmark_tpe_seed1.db', '2024-10-12_15-29-26_bo_benchmark_tpe_seed2.db', '2024-10-12_15-29-38_bo_benchmark_tpe_seed3.db', '2024-10-12_15-29-50_bo_benchmark_tpe_seed4.db'],
+    #     "gp": ['2024-10-13_10-30-10_bo_benchmark_gp_seed0.db', '2024-10-13_10-31-37_bo_benchmark_gp_seed1.db', '2024-10-13_10-33-12_bo_benchmark_gp_seed2.db', '2024-10-13_10-34-52_bo_benchmark_gp_seed3.db', '2024-10-13_10-36-29_bo_benchmark_gp_seed4.db'],
+    #     "parafac": ['2024-10-12_15-32-23_bo_parafac_seed0.db', '2024-10-12_15-33-00_bo_parafac_seed1.db', '2024-10-12_15-33-37_bo_parafac_seed2.db', '2024-10-12_15-34-14_bo_parafac_seed3.db', '2024-10-12_15-34-52_bo_parafac_seed4.db']
+    # }
+
     sampler_files = {
-        "random": ['2024-10-12_15-27-35_bo_benchmark_random_seed0.db', '2024-10-12_15-27-44_bo_benchmark_random_seed1.db', '2024-10-12_15-27-53_bo_benchmark_random_seed2.db', '2024-10-12_15-28-02_bo_benchmark_random_seed3.db', '2024-10-12_15-28-10_bo_benchmark_random_seed4.db'],
-        "tpe": ['2024-10-12_15-29-04_bo_benchmark_tpe_seed0.db', '2024-10-12_15-29-15_bo_benchmark_tpe_seed1.db', '2024-10-12_15-29-26_bo_benchmark_tpe_seed2.db', '2024-10-12_15-29-38_bo_benchmark_tpe_seed3.db', '2024-10-12_15-29-50_bo_benchmark_tpe_seed4.db'],
-        "gp": ['2024-10-13_10-30-10_bo_benchmark_gp_seed0.db', '2024-10-13_10-31-37_bo_benchmark_gp_seed1.db', '2024-10-13_10-33-12_bo_benchmark_gp_seed2.db', '2024-10-13_10-34-52_bo_benchmark_gp_seed3.db', '2024-10-13_10-36-29_bo_benchmark_gp_seed4.db'],
-        "parafac": ['2024-10-12_15-32-23_bo_parafac_seed0.db', '2024-10-12_15-33-00_bo_parafac_seed1.db', '2024-10-12_15-33-37_bo_parafac_seed2.db', '2024-10-12_15-34-14_bo_parafac_seed3.db', '2024-10-12_15-34-52_bo_parafac_seed4.db']
+        "random": [
+            '2024-10-13_11-29-06_bo_benchmark_random_map2_seed0.db',
+            '2024-10-13_11-29-18_bo_benchmark_random_map2_seed1.db',
+            '2024-10-13_11-29-31_bo_benchmark_random_map2_seed2.db',
+            '2024-10-13_11-29-43_bo_benchmark_random_map2_seed3.db',
+            '2024-10-13_11-29-57_bo_benchmark_random_map2_seed4.db'
+        ],
+        "tpe": [
+            '2024-10-13_11-30-12_bo_benchmark_tpe_map2_seed0.db',
+            '2024-10-13_11-30-28_bo_benchmark_tpe_map2_seed1.db',
+            '2024-10-13_11-30-47_bo_benchmark_tpe_map2_seed2.db',
+            '2024-10-13_11-31-04_bo_benchmark_tpe_map2_seed3.db',
+            '2024-10-13_11-31-22_bo_benchmark_tpe_map2_seed4.db'
+        ],
+        "gp": [
+            '2024-10-13_11-31-39_bo_benchmark_gp_map2_seed0.db',
+            '2024-10-13_11-34-55_bo_benchmark_gp_map2_seed1.db',
+            '2024-10-13_11-38-50_bo_benchmark_gp_map2_seed2.db',
+            '2024-10-13_11-42-44_bo_benchmark_gp_map2_seed3.db',
+            '2024-10-13_11-46-30_bo_benchmark_gp_map2_seed4.db'
+        ],
+        "parafac": [
+            '2024-10-13_11-19-47_bo_parafac_map2_seed0.db',
+            '2024-10-13_11-51-05_bo_parafac_map2_seed1.db',
+            '2024-10-13_12-49-19_bo_parafac_map2_seed2.db',
+            '2024-10-13_13-16-30_bo_parafac_map2_seed3.db',
+            '2024-10-13_13-46-07_bo_parafac_map2_seed4.db'
+        ],
+        # "bruteforce": [
+        #     '2024-10-13_11-50-22_bo_benchmark_bruteforce_map2_seed0.db'
+        # ]
     }
+
 
     # Call the function to generate and save plots with custom size
     plot_and_save_individual_histories(
         sampler_files, 
         db_folder, 
         output_dir,
+        map_shape=(2, 3),
     )
 
 
