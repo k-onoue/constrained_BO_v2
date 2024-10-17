@@ -17,7 +17,7 @@ args = parser.parse_args()
 logical_cores = args.logical_cores
 
 # ログファイルの設定
-logfile_name = f"benchmark_log_cores_{logical_cores}.log"
+logfile_name = f"benchmark_log_cores_{logical_cores}_cp1.log"
 set_logger(logfile_name, LOG_DIR)
 
 # テンソルの次元リスト
@@ -25,7 +25,7 @@ shapes = [(7,) * 4, (7,) * 9, (7,) * 11]
 num_trials = 5
 
 # パラファック分解（CPRank2）の実行と再構成
-def perform_parafac_and_reconstruct(tensor, rank=2):
+def perform_parafac_and_reconstruct(tensor, rank=1):
     start_time = time.time()
     
     # Parafac 分解
