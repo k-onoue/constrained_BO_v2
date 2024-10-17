@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x  # この行を追加してデバッグモードに
 
 # SLURM Resource configuration
 PARTITION="cluster_short"  # Partition name
@@ -33,6 +34,7 @@ cat $config_file
 for LOGICAL_CORES in "${LOGICAL_CORES_LIST[@]}"; do
     # Set up experiment name and log file paths
     EXPERIMENT_NAME="parafac_benchmark_cores${LOGICAL_CORES}"
+    TEMP="temp"
 
     # Run each experiment in parallel using sbatch
     sbatch --job-name="${EXPERIMENT_NAME}" \

@@ -4,13 +4,20 @@ import numpy as np
 import logging
 import time
 import random
-
+import argparse
 from _src import LOG_DIR
 from _src import set_logger
 
 
+# argparseの設定
+parser = argparse.ArgumentParser(description='Run Parafac decomposition benchmark with specified logical cores.')
+parser.add_argument('--logical_cores', type=int, required=True, help='Number of logical cores to use for the experiment')
+args = parser.parse_args()
+
+logical_cores = args.logical_cores
+
 # ログファイルの設定
-logfile_name = f"benchmark_log_cores_{}"
+logfile_name = f"benchmark_log_cores_{logical_cores}.log"
 set_logger(LOG_DIR, logfile_name)
 
 # テンソルの次元リスト
@@ -35,7 +42,7 @@ def perform_parafac_and_reconstruct(tensor, rank=2):
 for shape in shapes:
     times = []
     
-    logging.info(f"Running Parafac decomposition for tensor shape {shape}")
+    logging.info(f"Running Parafac decomposition for tensor shape {shape} with {logical_cores} logical cores")
     
     for trial in range(num_trials):
         # シード値を設定
@@ -57,4 +64,4 @@ for shape in shapes:
     
     logging.info(f"Shape {shape} - Average Time: {mean_time:.6f} seconds, Variance: {variance_time:.6f} seconds")
 
-print(f"Benchmark completed. Log saved to {logfile_name}")
+logging.info(f"Benchmark completed. Log saved to {logfile_name}")
