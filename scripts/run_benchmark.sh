@@ -24,7 +24,7 @@ SAMPLERS=("random" "tpe" "gp")
 BRUTEFORCE_SAMPLER="bruteforce"
 
 # Define the list of maps
-MAPS=("map1" "map2" "map3")  # You can define these as specific arrays in your Python script
+MAPS=(1 2 3)  # You can define these as specific arrays in your Python script
 
 # Overwrite config.ini file
 config_file="config.ini"

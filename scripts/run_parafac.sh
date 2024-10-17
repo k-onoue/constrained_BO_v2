@@ -19,7 +19,7 @@ TEMP="temp"  # Temporary directory for log files
 
 # Define the list of maps
 # MAPS=("map1" "map2" "map3")  # You can define these as specific arrays in your Python script
-MAPS=("map2" "map3")  # You can define these as specific arrays in your Python script
+MAPS=(2 3)  # You can define these as specific arrays in your Python script
 
 # Overwrite config.ini file
 config_file="config.ini"
