@@ -18,7 +18,7 @@ logical_cores = args.logical_cores
 
 # ログファイルの設定
 logfile_name = f"benchmark_log_cores_{logical_cores}.log"
-set_logger(LOG_DIR, logfile_name)
+set_logger(logfile_name, LOG_DIR)
 
 # テンソルの次元リスト
 shapes = [(7,) * 4, (7,) * 9, (7,) * 11]
