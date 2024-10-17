@@ -17,8 +17,18 @@ SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
 TEMP="temp"  # Temporary directory for log files
 
+# Which date to use for the experiments
+DATE="2024-10-17"
+
+# Sampler specific parameters
+CP_RANK=2  # CP rank for the Parafac decomposition
+CP_ALS_ITERATIONS=100  # Number of ALS iterations for Parafac decomposition
+CP_MASK_RATIO=0.33  # Mask ratio for Parafac sampling
+CP_RANDOM_DIST_TYPE="uniform"  # Distribution type for random sampling in Parafac
+ACQ_TRADE_OFF_PARAM=2.0  # Acquisition function trade-off parameter
+ACQ_BATCH_SIZE=1  # Batch size for acquisition function optimization
+
 # Define the list of maps
-# MAPS=("map1" "map2" "map3")  # You can define these as specific arrays in your Python script
 MAPS=(2 3)  # You can define these as specific arrays in your Python script
 
 # Overwrite config.ini file
@@ -50,6 +60,6 @@ for MAP in "${MAPS[@]}"; do
                --cpus-per-task=$CPUS_PER_TASK \
                --partition=$PARTITION \
                --time=$TIME \
-               --wrap="python3 experiments/2024-10-13/bo_parafac.py --map $MAP --seed $SEED --iter_bo $ITER --cp_rank 2 --cp_als_iterations 100 --cp_mask_ratio 0.1 --cp_random_dist_type uniform --acq_trade_off_param 2.0 --acq_batch_size 1"
+               --wrap="python3 experiments/$DATE/bo_parafac.py --map $MAP --seed $SEED --iter_bo $ITER --cp_rank $CP_RANK --cp_als_iterations $CP_ALS_ITERATIONS --cp_mask_ratio $CP_MASK_RATIO --cp_random_dist_type $CP_RANDOM_DIST_TYPE --acq_trade_off_param $ACQ_TRADE_OFF_PARAM --acq_batch_size $ACQ_BATCH_SIZE"
     done
 done
