@@ -40,5 +40,5 @@ for LOGICAL_CORES in "${LOGICAL_CORES_LIST[@]}"; do
            --cpus-per-task=$LOGICAL_CORES \
            --partition=$PARTITION \
            --time=$TIME \
-           --wrap="python3 experiments/2024-10-12/logical_core_benchmark.py --logical_cores $LOGICAL_CORES"
+           --wrap="python3 experiments/2024-10-13/logical_core_benchmark.py --logical_cores $LOGICAL_CORES"
 done
