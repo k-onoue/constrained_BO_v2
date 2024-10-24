@@ -32,15 +32,55 @@ cat $config_file
 
 # Loop through each logical core setting
 for LOGICAL_CORES in "${LOGICAL_CORES_LIST[@]}"; do
-    # Set up experiment name and log file paths
-    EXPERIMENT_NAME="parafac_benchmark_cores${LOGICAL_CORES}"
     TEMP="temp"
 
-    # Run each experiment in parallel using sbatch
-    sbatch --job-name="${EXPERIMENT_NAME}" \
-           --output="${TEMP}/${EXPERIMENT_NAME}_%j.log" \
-           --cpus-per-task=$LOGICAL_CORES \
-           --partition=$PARTITION \
-           --time=$TIME \
-           --wrap="python3 experiments/2024-10-13/logical_core_benchmark.py --logical_cores $LOGICAL_CORES"
+    RANK_LIST=(1 2 3)
+
+    # Tensor Ring
+    EXPERIMENT_NAME="tensor_ring_benchmark_cores${LOGICAL_CORES}"
+    for RANK in "${RANK_LIST[@]}"; do
+        # Run each experiment in parallel using sbatch
+        sbatch --job-name="${EXPERIMENT_NAME}" \
+               --output="${TEMP}/${EXPERIMENT_NAME}_rank${RANK}_%j.log" \
+               --cpus-per-task=$LOGICAL_CORES \
+               --partition=$PARTITION \
+               --time=$TIME \
+               --wrap="python3 experiments/2024-10-24/tensor_ring_benchmark.py --logical_cores $LOGICAL_CORES --rank $RANK"
+    done
+
+    # Tensor Ring ALS Sampled
+    EXPERIMENT_NAME="tensor_ring_als_sampled_benchmark_cores${LOGICAL_CORES}"
+    for RANK in "${RANK_LIST[@]}"; do
+        # Run each experiment in parallel using sbatch
+        sbatch --job-name="${EXPERIMENT_NAME}" \
+               --output="${TEMP}/${EXPERIMENT_NAME}_rank${RANK}_%j.log" \
+               --cpus-per-task=$LOGICAL_CORES \
+               --partition=$PARTITION \
+               --time=$TIME \
+               --wrap="python3 experiments/2024-10-24/tensor_ring_als_sampled_benchmark.py --logical_cores $LOGICAL_CORES --rank $RANK"
+    done
+
+    # Tensor Ring ALS
+    EXPERIMENT_NAME="tensor_ring_als_benchmark_cores${LOGICAL_CORES}"
+    for RANK in "${RANK_LIST[@]}"; do
+        # Run each experiment in parallel using sbatch
+        sbatch --job-name="${EXPERIMENT_NAME}" \
+               --output="${TEMP}/${EXPERIMENT_NAME}_rank${RANK}_%j.log" \
+               --cpus-per-task=$LOGICAL_CORES \
+               --partition=$PARTITION \
+               --time=$TIME \
+               --wrap="python3 experiments/2024-10-24/tensor_ring_als_benchmark.py --logical_cores $LOGICAL_CORES --rank $RANK"
+    done
+
+    # Tensor Train
+    EXPERIMENT_NAME="tensor_train_benchmark_cores${LOGICAL_CORES}"
+    for RANK in "${RANK_LIST[@]}"; do
+        # Run each experiment in parallel using sbatch
+        sbatch --job-name="${EXPERIMENT_NAME}" \
+               --output="${TEMP}/${EXPERIMENT_NAME}_rank${RANK}_%j.log" \
+               --cpus-per-task=$LOGICAL_CORES \
+               --partition=$PARTITION \
+               --time=$TIME \
+               --wrap="python3 experiments/2024-10-24/tensor_train_benchmark.py --logical_cores $LOGICAL_CORES --rank $RANK"
+    done
 done

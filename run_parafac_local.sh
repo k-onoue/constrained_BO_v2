@@ -21,11 +21,11 @@ for SEED in $(seq $SEED_START $SEED_END); do
     python3 experiments/2024-10-13/bo_parafac.py \
         --seed $SEED \
         --iter_bo $ITER \
-        --cp_rank 2 \
+        --cp_rank 1 \
         --cp_als_iterations 100 \
-        --cp_mask_ratio 0.1 \
+        --cp_mask_ratio 0.33 \
         --cp_random_dist_type uniform \
         --acq_trade_off_param 2.0 \
         --acq_batch_size 1 \
-        --map 2 
+        --map 3
 done
