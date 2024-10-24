@@ -34,7 +34,7 @@ cat $config_file
 for LOGICAL_CORES in "${LOGICAL_CORES_LIST[@]}"; do
     TEMP="temp"
 
-    RANK_LIST=(1 2 3)
+    RANK_LIST=(0 1 2)
 
     # Tensor Ring
     EXPERIMENT_NAME="tensor_ring_benchmark_cores${LOGICAL_CORES}"

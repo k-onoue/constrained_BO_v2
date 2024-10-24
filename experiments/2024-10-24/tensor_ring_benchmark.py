@@ -18,7 +18,7 @@ logical_cores = args.logical_cores
 rank_index = args.rank
 
 # ログファイルの設定
-logfile_name = f"benchmark_log_cores_{logical_cores}_rank{rank_index}_tr.log"
+logfile_name = f"benchmark_log_cores_{logical_cores}_rank{rank_index}_tr"
 set_logger(logfile_name, LOG_DIR)
 
 # テンソルの次元リスト
