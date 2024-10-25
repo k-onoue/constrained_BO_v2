@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import re
 import sys
 
 
@@ -17,6 +18,21 @@ def set_logger(log_filename_base, save_dir):
     )
 
     return log_filename
+
+
+def parse_experiment_path(file_path):
+    # Identify the target pattern "experiments/yyyy-mm-dd"
+    match = re.search(r"experiments/\d{4}-\d{2}-\d{2}", file_path)
+    
+    if not match:
+        raise ValueError("The specified path does not contain 'experiments/yyyy-mm-dd' format.")
+    
+    # Get the folder structure after the "experiments/yyyy-mm-dd" segment
+    sub_path = file_path[match.end() + 1:]  # Skip "experiments/yyyy-mm-dd/" part
+    folder_names = os.path.splitext(sub_path)[0].split(os.sep)  # Remove extension and split by folder
+    
+    # Join folder names with underscores
+    return "_".join(folder_names)
 
 
 def search_log_files(
