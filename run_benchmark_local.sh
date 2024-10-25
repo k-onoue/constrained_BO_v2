@@ -18,24 +18,24 @@ SAMPLERS=("random" "tpe" "gp")
 # Bruteforce will be run separately
 BRUTEFORCE_SAMPLER="bruteforce"
 
-# Define the list of maps
-MAPS=(2)  # You can define these as specific arrays in your Python script
+# Define the list of dimensions
+DIMENSIONS=(2 3 5)  # You can modify this to fit your needs
 
-# Loop through maps, samplers, and seeds
-for MAP in "${MAPS[@]}"; do
+# Loop through dimensions, samplers, and seeds
+for DIM in "${DIMENSIONS[@]}"; do
     for SAMPLER in "${SAMPLERS[@]}"; do
         for SEED in $(seq $SEED_START $SEED_END); do
 
             # Set up experiment name and log file paths
-            EXPERIMENT_NAME="benchmark_${SAMPLER}_${MAP}_seed${SEED}"
+            EXPERIMENT_NAME="benchmark_${SAMPLER}_dim${DIM}_seed${SEED}"
             LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
 
-            echo "Running experiment with sampler $SAMPLER, map $MAP, seed $SEED..."
+            echo "Running experiment with sampler $SAMPLER, dimension $DIM, seed $SEED..."
 
             # Run each experiment locally and log the output
-            python3 experiments/2024-10-13/bo_benchmark.py \
+            python3 experiments/2024-10-25/ackley/bo_benchmark.py \
                 --sampler $SAMPLER \
-                --map $MAP \
+                --dimensions $DIM \
                 --seed $SEED \
                 --iter_bo $ITER \
                 > "$LOG_FILE" 2>&1
@@ -45,17 +45,17 @@ for MAP in "${MAPS[@]}"; do
     done
 done
 
-# Run Bruteforce separately for each map (no seed loop)
-for MAP in "${MAPS[@]}"; do
-    EXPERIMENT_NAME="benchmark_bruteforce_${MAP}"
+# Run Bruteforce separately for each dimension (no seed loop)
+for DIM in "${DIMENSIONS[@]}"; do
+    EXPERIMENT_NAME="benchmark_bruteforce_dim${DIM}"
     LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
 
-    echo "Running experiment with Bruteforce on map $MAP..."
+    echo "Running experiment with Bruteforce on dimension $DIM..."
 
     # Run the Bruteforce experiment locally and log the output
-    python3 experiments/2024-10-13/bo_benchmark.py \
+    python3 experiments/2024-10-25/ackley/bo_benchmark.py \
         --sampler $BRUTEFORCE_SAMPLER \
-        --map $MAP \
+        --dimensions $DIM \
         --iter_bo $ITER \
         > "$LOG_FILE" 2>&1
 
