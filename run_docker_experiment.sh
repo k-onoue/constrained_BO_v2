@@ -64,7 +64,7 @@ run_script="run_experiments.sh"
 
 run_script_content="#!/bin/bash
 # 実験スクリプトを実行
-bash /app/run_tensor_decomposition.sh"
+bash /app/run_parafac_local.sh"
 
 # run_experiments.sh に書き込み
 echo "$run_script_content" > $run_script
