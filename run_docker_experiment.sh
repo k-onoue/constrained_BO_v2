@@ -48,7 +48,7 @@ project_dir = /app
 data_dir = %(project_dir)s/data
 results_dir = %(project_dir)s/results
 logs_dir = %(results_dir)s/logs
-db_dir = %(results_dir)s/dbs"
+dbs_dir = %(results_dir)s/dbs"
 
 # config.ini ファイルを上書き
 echo "$config_content" > $config_file
