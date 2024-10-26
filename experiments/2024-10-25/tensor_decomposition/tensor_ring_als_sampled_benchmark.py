@@ -27,7 +27,7 @@ shapes = [(7,) * 4, (7,) * 9, (7,) * 11]
 num_trials = 5
 
 # Rank list (rank_index is used to select the appropriate rank)
-rank_list = [1, 2, [1, 3, 4, 1]]
+rank_list = [1, 2, 3, 4]
 selected_rank = rank_list[rank_index]
 
 # テンソルリングALSサンプル分解（TR ALS Sampled）の実行と再構成
