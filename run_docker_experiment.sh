@@ -6,6 +6,9 @@ mkdir -p results/logs/
 mkdir -p results/dbs/
 mkdir -p temp/
 
+# 各ディレクトリに必要な書き込み権限を付与
+chmod -R 777 results/ temp/
+
 # 現在の日付を取得（YYYY-MM-DD形式）
 DATE="2024-10-25"
 
@@ -32,6 +35,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # プロジェクトファイルをすべてコピー
 COPY . .
+
+# run_experiments.sh の権限を付与
+RUN chmod +x /app/run_experiments.sh
 
 # コンテナ起動時に実行するコマンドを指定
 CMD [\"bash\", \"/app/run_experiments.sh\"]
@@ -80,4 +86,3 @@ docker run --rm \
 
 # 実行完了のメッセージ
 echo "Dockerコンテナが終了し、結果はローカルの results ディレクトリに保存されました。"
-
