@@ -7,20 +7,22 @@ mkdir -p results/dbs/
 mkdir -p temp/
 
 # Params
-ITER=500  # Number of iterations for samplers
+# ITER=500  # Number of iterations for samplers
+ITER=3000  # Number of iterations for samplers
 SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
 TEMP="temp"  # Temporary directory for log files
 
 # Sampler list excluding Bruteforce
-SAMPLERS=("random" "tpe" "gp")
+# SAMPLERS=("random" "tpe" "gp")
+SAMPLERS=("random")
 
 # Bruteforce will be run separately
 BRUTEFORCE_SAMPLER="bruteforce"
 
 # Define the list of dimensions
 # DIMENSIONS=(2 3 5)  # You can modify this to fit your needs
-DIMENSIONS=(7)
+DIMENSIONS=(3 5 7)
 
 # Loop through dimensions, samplers, and seeds
 for DIM in "${DIMENSIONS[@]}"; do
