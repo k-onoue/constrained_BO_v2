@@ -5,38 +5,50 @@ from functools import partial
 
 import numpy as np
 import optuna
-from _src import DB_DIR, LOG_DIR, ParafacSampler, WarcraftObjective, set_logger
+from _src import DB_DIR, LOG_DIR, ParafacSampler, set_logger
 
 
-def objective(trial, map_shape, objective_function):
+def ackley(x):
     """
-    Objective function for the Bayesian optimization process.
+    Computes the d-dimensional Ackley function.
+    :param x: np.array, shape (d,) - point at which to evaluate the function.
+    :return: float - value of the Ackley function at x.
     """
-    directions = ["oo", "ab", "ac", "ad", "bc", "bd", "cd"]
-    x = np.empty(map_shape, dtype=object)
+    a = 20
+    b = 0.2
+    c = 2 * np.pi
+    d = len(x)
+    sum1 = -a * np.exp(-b * np.sqrt(np.sum(x ** 2) / d))
+    sum2 = -np.exp(np.sum(np.cos(c * x)) / d)
+    return sum1 + sum2 + a + np.exp(1)
 
-    # Suggest categorical parameters for each cell in the matrix
-    for i in range(map_shape[0]):
-        for j in range(map_shape[1]):
-            x[i, j] = trial.suggest_categorical(f"x_{i}_{j}", directions)
 
-    # Evaluate the objective function using the suggested directions
-    return objective_function(x)
+def objective(trial, dimensions):
+    """
+    Objective function for Bayesian optimization using the d-dimensional Ackley function.
+    """
+    # Suggest integer-valued parameters in each dimension within the range [-5, 5]
+    x = np.array([trial.suggest_int(f"x_{i}", -5, 5) for i in range(dimensions)])
+    
+    # Compute the Ackley function
+    return ackley(x)
 
 
 def run_bo(settings):
     """
     Run the Bayesian optimization experiment using the specified settings.
     """
-    # Set up the target map and objective function
-    map_targeted = settings["map"]
-    map_shape = map_targeted.shape
-    objective_function = WarcraftObjective(map_targeted)
-
-    # Set up the sampler for Bayesian optimization, applying the unique_sampling flag
+    dimensions = settings["dimensions"]  # Number of dimensions for the Ackley function
+    
+    # Set up the ParafacSampler for Bayesian optimization
     sampler = ParafacSampler(
+        cp_rank=settings["cp_settings"]["rank"],  # Rank for the CP decomposition
+        als_iter_num=settings["cp_settings"]["als_iterations"],  # ALS iterations
+        mask_ratio=settings["cp_settings"]["mask_ratio"],  # Mask ratio for CP decomposition
         trade_off_param=settings["acqf_settings"]["trade_off_param"],
-        unique_sampling=settings["unique_sampling"],  # Apply the flag from settings
+        distribution_type=settings["cp_settings"]["random_dist_type"],  # Distribution type
+        seed=settings["seed"],  # Random seed for reproducibility
+        unique_sampling=settings["unique_sampling"],  # Apply the unique_sampling flag
     )
 
     # Determine whether to minimize or maximize based on acq_maximize flag
@@ -57,25 +69,15 @@ def run_bo(settings):
         )
         logging.info(f"Created new study '{settings['name']}' in {settings['storage']}")
 
-    # Use functools.partial to bind additional arguments
-    objective_with_args = partial(
-        objective, map_shape=map_shape, objective_function=objective_function
-    )
+    # Bind the dimension to the objective function
+    objective_with_args = partial(objective, dimensions=dimensions)
 
+    # Optimize
     study.optimize(objective_with_args, n_trials=settings["iter_bo"])
 
     # Log final results
-    best_x = np.empty(map_shape, dtype=object)
-    for i in range(map_shape[0]):
-        for j in range(map_shape[1]):
-            best_x[i, j] = study.best_params[f"x_{i}_{j}"]
-
     logging.info(f"Best value: {study.best_value}")
     logging.info(f"Best params: {study.best_params}")
-    logging.info(f"Best Direction Matrix:\n{best_x}")
-
-    # Optionally visualize the optimization history
-    optuna.visualization.plot_optimization_history(study)
 
 
 def parse_args():
@@ -83,7 +85,7 @@ def parse_args():
     Parse command-line arguments to specify experiment settings.
     """
     parser = argparse.ArgumentParser(
-        description="Bayesian Optimization Experiment for Warcraft Pathfinding"
+        description="Bayesian Optimization Experiment with ParafacSampler for Ackley function"
     )
 
     parser.add_argument(
@@ -124,9 +126,6 @@ def parse_args():
         help="Trade-off parameter for the acquisition function.",
     )
     parser.add_argument(
-        "--acq_batch_size", type=int, default=10, help="Batch size for optimization."
-    )
-    parser.add_argument(
         "--acq_maximize",
         action="store_true",
         help="Whether to maximize the acquisition function.",
@@ -137,30 +136,13 @@ def parse_args():
         help="Whether to use unique sampling in the ParafacSampler.",
     )
     parser.add_argument(
-        "--map_option",
+        "--dimensions",
         type=int,
-        choices=[1, 2, 3],
-        default=1,
-        help="Select the map configuration: 1 for 2x2, 2 for 3x2, 3 for 3x3.",
+        default=2,
+        help="Number of dimensions for the Ackley function.",
     )
 
     return parser.parse_args()
-
-
-def get_map(map_option: int):
-    """
-    Return the map configuration based on the selected option.
-    """
-    if map_option == 1:
-        map_targeted = np.array([[1, 4], [2, 1]])
-    elif map_option == 2:
-        map_targeted = np.array([[1, 4, 1], [2, 1, 1]])
-    elif map_option == 3:
-        map_targeted = np.array([[1, 4, 1], [2, 1, 3], [5, 2, 1]])
-    else:
-        raise ValueError(f"Invalid map option: {map_option}")
-
-    return map_targeted / map_targeted.sum()
 
 
 if __name__ == "__main__":
@@ -170,11 +152,11 @@ if __name__ == "__main__":
     # Parse the command-line arguments
     args = parse_args()
 
-    # Get the map configuration based on the command-line argument
-    map_targeted = get_map(args.map_option)
-
-    # Concatenate the sampler type to the script name
-    script_name = f"{base_script_name}_map{args.map_option}_seed{args.seed}"
+    # Concatenate parameters to create a unique script name for each configuration
+    script_name = (
+        f"{base_script_name}_dim{args.dimensions}_rank{args.cp_rank}_"
+        f"mask{args.cp_mask_ratio}_tradeoff{args.acq_trade_off_param}_seed{args.seed}"
+    )
 
     # Set up logging and retrieve the log filename
     log_filename = set_logger(script_name, LOG_DIR)
@@ -188,14 +170,11 @@ if __name__ == "__main__":
     settings = {
         "name": script_name,
         "seed": args.seed,
-        "map": map_targeted,
+        "dimensions": args.dimensions,
         "iter_bo": args.iter_bo,  # Number of iterations for Bayesian optimization
         "storage": storage_url,  # Full path for the SQLite database in DB_DIR
         "unique_sampling": args.unique_sampling,  # Apply the unique_sampling flag
         "cp_settings": {
-            "dim": len(
-                map_targeted.flatten()
-            ),  # Dimensionality of the CP decomposition
             "rank": args.cp_rank,  # Rank for the CP decomposition
             "als_iterations": args.cp_als_iterations,  # ALS iterations for the CP decomposition
             "mask_ratio": args.cp_mask_ratio,  # Mask ratio used in the CP decomposition
@@ -203,7 +182,6 @@ if __name__ == "__main__":
         },
         "acqf_settings": {
             "trade_off_param": args.acq_trade_off_param,  # Trade-off parameter for acquisition function
-            "batch_size": args.acq_batch_size,  # Batch size for optimization
             "maximize": args.acq_maximize,  # Whether to maximize the acquisition function
         },
     }
@@ -212,3 +190,223 @@ if __name__ == "__main__":
 
     # Run the Bayesian optimization experiment
     run_bo(settings)
+
+
+# ackley_1
+"""
+#!/bin/bash
+
+# Create results and logs directories if they don't exist
+mkdir -p results/
+mkdir -p results/logs/
+mkdir -p results/dbs/
+mkdir -p temp/
+
+# Parameters
+ITER=500  # Number of iterations for ParafacSampler
+SEED_START=0  # Starting seed value
+SEED_END=4  # Ending seed value (5 seeds in total)
+TEMP="temp"  # Temporary directory for log files
+
+# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
+DIMENSIONS=(2 3 5 7)
+CP_RANKS=(1 2)
+CP_MASK_RATIOS=(0.1 0.2 0.33)
+TRADE_OFF_PARAMS=(1 3 5)
+
+
+# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
+for DIM in "${DIMENSIONS[@]}"; do
+    for CP_RANK in "${CP_RANKS[@]}"; do
+        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
+            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
+                for SEED in $(seq $SEED_START $SEED_END); do
+
+                    # Set up experiment name and log file paths
+                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
+                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
+
+                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
+
+                    # Run each experiment and log the output
+                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
+                        --dimensions $DIM \
+                        --cp_rank $CP_RANK \
+                        --cp_mask_ratio $CP_MASK_RATIO \
+                        --acq_trade_off_param $TRADE_OFF_PARAM \
+                        --seed $SEED \
+                        --iter_bo $ITER \
+                        > "$LOG_FILE" 2>&1
+
+                    echo "Log saved to $LOG_FILE"
+                done
+            done
+        done
+    done
+done
+"""
+
+# ackley_2: 重複サンプリングを許さない
+"""
+#!/bin/bash
+
+# Create results and logs directories if they don't exist
+mkdir -p results/
+mkdir -p results/logs/
+mkdir -p results/dbs/
+mkdir -p temp/
+
+# Parameters
+ITER=500  # Number of iterations for ParafacSampler
+SEED_START=0  # Starting seed value
+SEED_END=4  # Ending seed value (5 seeds in total)
+TEMP="temp"  # Temporary directory for log files
+
+# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
+DIMENSIONS=(2 3 5 7)
+CP_RANKS=(1 2)
+CP_MASK_RATIOS=(0.1 0.2 0.33)
+TRADE_OFF_PARAMS=(1 3 5)
+
+
+# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
+for DIM in "${DIMENSIONS[@]}"; do
+    for CP_RANK in "${CP_RANKS[@]}"; do
+        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
+            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
+                for SEED in $(seq $SEED_START $SEED_END); do
+
+                    # Set up experiment name and log file paths
+                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
+                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
+
+                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
+
+                    # Run each experiment and log the output
+                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
+                        --dimensions $DIM \
+                        --cp_rank $CP_RANK \
+                        --cp_mask_ratio $CP_MASK_RATIO \
+                        --acq_trade_off_param $TRADE_OFF_PARAM \
+                        --seed $SEED \
+                        --iter_bo $ITER \
+                        --unique_sampling \
+                        > "$LOG_FILE" 2>&1
+
+                    echo "Log saved to $LOG_FILE"
+                done
+            done
+        done
+    done
+done
+"""
+
+# ackley_3: cp ランクと性能 
+"""
+#!/bin/bash
+
+# Create results and logs directories if they don't exist
+mkdir -p results/
+mkdir -p results/logs/
+mkdir -p results/dbs/
+mkdir -p temp/
+
+# Parameters
+ITER=500  # Number of iterations for ParafacSampler
+SEED_START=0  # Starting seed value
+SEED_END=4  # Ending seed value (5 seeds in total)
+TEMP="temp"  # Temporary directory for log files
+
+# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
+DIMENSIONS=(2 3 5 7)
+CP_RANKS=(1 2 3 4)
+CP_MASK_RATIOS=(0.33)
+TRADE_OFF_PARAMS=(3)
+
+
+# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
+for DIM in "${DIMENSIONS[@]}"; do
+    for CP_RANK in "${CP_RANKS[@]}"; do
+        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
+            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
+                for SEED in $(seq $SEED_START $SEED_END); do
+
+                    # Set up experiment name and log file paths
+                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
+                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
+
+                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
+
+                    # Run each experiment and log the output
+                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
+                        --dimensions $DIM \
+                        --cp_rank $CP_RANK \
+                        --cp_mask_ratio $CP_MASK_RATIO \
+                        --acq_trade_off_param $TRADE_OFF_PARAM \
+                        --seed $SEED \
+                        --iter_bo $ITER \
+                        > "$LOG_FILE" 2>&1
+
+                    echo "Log saved to $LOG_FILE"
+                done
+            done
+        done
+    done
+done
+"""
+
+# ackley_4: normal distribution
+"""
+#!/bin/bash
+
+# Create results and logs directories if they don't exist
+mkdir -p results/
+mkdir -p results/logs/
+mkdir -p results/dbs/
+mkdir -p temp/
+
+# Parameters
+ITER=500  # Number of iterations for ParafacSampler
+SEED_START=0  # Starting seed value
+SEED_END=4  # Ending seed value (5 seeds in total)
+TEMP="temp"  # Temporary directory for log files
+
+# Define the list of dimensions, cp_rank, cp_mask_ratio, trade_off_param values, and distribution type
+DIMENSIONS=(2 3 5 7)
+CP_RANKS=(1 2 3 4)
+CP_MASK_RATIOS=(0.33)
+TRADE_OFF_PARAMS=(3)
+CP_RANDOM_DIST_TYPE="normal"  # Distribution type for random sampling
+
+# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
+for DIM in "${DIMENSIONS[@]}"; do
+    for CP_RANK in "${CP_RANKS[@]}"; do
+        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
+            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
+                for SEED in $(seq $SEED_START $SEED_END); do
+
+                    # Set up experiment name and log file paths
+                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
+                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
+
+                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
+
+                    # Run each experiment and log the output
+                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
+                        --dimensions $DIM \
+                        --cp_rank $CP_RANK \
+                        --cp_mask_ratio $CP_MASK_RATIO \
+                        --acq_trade_off_param $TRADE_OFF_PARAM \
+                        --seed $SEED \
+                        --iter_bo $ITER \
+                        --cp_random_dist_type $CP_RANDOM_DIST_TYPE \
+                        > "$LOG_FILE" 2>&1
+
+                    echo "Log saved to $LOG_FILE"
+                done
+            done
+        done
+    done
+done
+
+"""

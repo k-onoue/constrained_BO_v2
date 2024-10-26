@@ -19,7 +19,8 @@ SAMPLERS=("random" "tpe" "gp")
 BRUTEFORCE_SAMPLER="bruteforce"
 
 # Define the list of dimensions
-DIMENSIONS=(2 3 5)  # You can modify this to fit your needs
+# DIMENSIONS=(2 3 5)  # You can modify this to fit your needs
+DIMENSIONS=(7)
 
 # Loop through dimensions, samplers, and seeds
 for DIM in "${DIMENSIONS[@]}"; do
@@ -45,19 +46,19 @@ for DIM in "${DIMENSIONS[@]}"; do
     done
 done
 
-# Run Bruteforce separately for each dimension (no seed loop)
-for DIM in "${DIMENSIONS[@]}"; do
-    EXPERIMENT_NAME="benchmark_bruteforce_dim${DIM}"
-    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
+# # Run Bruteforce separately for each dimension (no seed loop)
+# for DIM in "${DIMENSIONS[@]}"; do
+#     EXPERIMENT_NAME="benchmark_bruteforce_dim${DIM}"
+#     LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
 
-    echo "Running experiment with Bruteforce on dimension $DIM..."
+#     echo "Running experiment with Bruteforce on dimension $DIM..."
 
-    # Run the Bruteforce experiment locally and log the output
-    python3 experiments/2024-10-25/ackley/bo_benchmark.py \
-        --sampler $BRUTEFORCE_SAMPLER \
-        --dimensions $DIM \
-        --iter_bo $ITER \
-        > "$LOG_FILE" 2>&1
+#     # Run the Bruteforce experiment locally and log the output
+#     python3 experiments/2024-10-25/ackley/bo_benchmark.py \
+#         --sampler $BRUTEFORCE_SAMPLER \
+#         --dimensions $DIM \
+#         --iter_bo $ITER \
+#         > "$LOG_FILE" 2>&1
 
-    echo "Log saved to $LOG_FILE"
-done
+#     echo "Log saved to $LOG_FILE"
+# done

@@ -162,14 +162,19 @@ class ParafacSampler(BaseSampler):
 
         tensors_list = []
 
+        eval_min = np.nanmin(tensor_eval[np.isfinite(tensor_eval)]) # Avoid NaN
+        eval_max = np.nanmax(tensor_eval[np.isfinite(tensor_eval)]) # Avoid NaN
+        eval_mean = np.nanmean(tensor_eval[np.isfinite(tensor_eval)])
+        eval_std = np.nanstd(tensor_eval[np.isfinite(tensor_eval)])
+
         # Generate initial tensor with random values
         init_tensor_eval = self._generate_random_array(
-            low=np.nanmin(tensor_eval[np.isfinite(tensor_eval)]),  # Avoid NaN
-            high=np.nanmax(tensor_eval[np.isfinite(tensor_eval)]),  # Avoid NaN
+            low=eval_min, 
+            high=eval_max, 
             shape=tensor_eval.shape,
             distribution_type=distribution_type,
-            mean=np.nanmean(tensor_eval[np.isfinite(tensor_eval)]),
-            std_dev=np.nanstd(tensor_eval[np.isfinite(tensor_eval)]),
+            mean=eval_mean,
+            std_dev=eval_std,
         )
 
         init_tensor_eval[tensor_eval_bool == True] = tensor_eval[tensor_eval_bool == True]
@@ -178,6 +183,10 @@ class ParafacSampler(BaseSampler):
             mask_tensor = np.ones_like(tensor_eval_bool)
             for mask_index in mask_list:
                 mask_tensor[mask_index] = False
+
+            # print()
+            # print(init_tensor_eval)
+            # print()
 
             # Perform CP decomposition
             cp_tensor = parafac(
@@ -269,7 +278,14 @@ class ParafacSampler(BaseSampler):
     ) -> np.ndarray:
         """
         Generate an array of random numbers with specified bounds and distribution type.
+        Adds small noise if the evaluated entries are identical to avoid singular matrix errors.
         """
+        # Handle case where all entries are identical by adding small random noise
+        if low == high:
+            low = low - 1e-6
+            high = high + 1e-6
+            std_dev = std_dev + 1e-6
+
         if distribution_type == "uniform":
             # Generate uniform random numbers
             return self.rng.uniform(low, high, shape)
@@ -429,14 +445,19 @@ class NNParafacSampler(BaseSampler):
 
         tensors_list = []
 
+        eval_min = np.nanmin(tensor_eval[np.isfinite(tensor_eval)]) # Avoid NaN
+        eval_max = np.nanmax(tensor_eval[np.isfinite(tensor_eval)]) # Avoid NaN
+        eval_mean = np.nanmean(tensor_eval[np.isfinite(tensor_eval)])
+        eval_std = np.nanstd(tensor_eval[np.isfinite(tensor_eval)])
+
         # Generate initial tensor with random values
         init_tensor_eval = self._generate_random_array(
-            low=np.nanmin(tensor_eval[np.isfinite(tensor_eval)]),  # Avoid NaN
-            high=np.nanmax(tensor_eval[np.isfinite(tensor_eval)]),  # Avoid NaN
+            low=eval_min, 
+            high=eval_max, 
             shape=tensor_eval.shape,
             distribution_type=distribution_type,
-            mean=np.nanmean(tensor_eval[np.isfinite(tensor_eval)]),
-            std_dev=np.nanstd(tensor_eval[np.isfinite(tensor_eval)]),
+            mean=eval_mean,
+            std_dev=eval_std,
         )
 
         init_tensor_eval[tensor_eval_bool == True] = tensor_eval[tensor_eval_bool == True]
@@ -536,7 +557,14 @@ class NNParafacSampler(BaseSampler):
     ) -> np.ndarray:
         """
         Generate an array of random numbers with specified bounds and distribution type.
+        Adds small noise if the evaluated entries are identical to avoid singular matrix errors.
         """
+        # Handle case where all entries are identical by adding small random noise
+        if low == high:
+            low = low - 1e-6
+            high = high + 1e-6
+            std_dev = std_dev + 1e-6
+
         if distribution_type == "uniform":
             # Generate uniform random numbers
             return self.rng.uniform(low, high, shape)
