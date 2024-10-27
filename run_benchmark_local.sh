@@ -22,7 +22,7 @@ BRUTEFORCE_SAMPLER="bruteforce"
 
 # Define the list of dimensions
 # DIMENSIONS=(2 3 5)  # You can modify this to fit your needs
-DIMENSIONS=(3 5 7)
+DIMENSIONS=(2 3 5 7)
 
 # Loop through dimensions, samplers, and seeds
 for DIM in "${DIMENSIONS[@]}"; do
@@ -36,7 +36,7 @@ for DIM in "${DIMENSIONS[@]}"; do
             echo "Running experiment with sampler $SAMPLER, dimension $DIM, seed $SEED..."
 
             # Run each experiment locally and log the output
-            python3 experiments/2024-10-25/ackley/bo_benchmark.py \
+            python3 experiments/2024-10-26/sphere/bo_benchmark.py \
                 --sampler $SAMPLER \
                 --dimensions $DIM \
                 --seed $SEED \

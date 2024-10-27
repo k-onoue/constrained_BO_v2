@@ -3,7 +3,7 @@ set -x  # Enable debug mode
 
 # Number of logical cores to assign per process
 LOGICAL_CORES=8  # 8 logical cores per experiment
-DATE="2024-10-25"  # Experiment date as a variable
+DATE="2024-10-26"  # Experiment date as a variable
 
 # Create necessary directories if they don't exist
 mkdir -p results/
@@ -15,7 +15,7 @@ mkdir -p temp/
 ITER=3000  # Number of iterations for ParafacSampler
 SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
-DIMENSIONS=(3 5 7)
+DIMENSIONS=(2 3 5 7)
 CP_RANKS=(2)
 CP_MASK_RATIOS=(0.33)
 TRADE_OFF_PARAMS=(3)
@@ -58,7 +58,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                         # Run without taskset if not enough cores are available
                         echo "Running experiment without parallelization: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED"
                         
-                        python3 experiments/${DATE}/ackley/bo_parafac.py \
+                        python3 experiments/${DATE}/sphere/bo_parafac.py \
                             --dimensions $DIM \
                             --cp_rank $CP_RANK \
                             --cp_mask_ratio $CP_MASK_RATIO \
