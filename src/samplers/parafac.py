@@ -57,10 +57,6 @@ class ParafacSampler(BaseSampler):
             study.get_trials(deepcopy=False)
         )
 
-        print()
-        print(search_space)
-        print()
-
         # Include integer and categorical distributions
         relevant_search_space = {}
         for name, distribution in search_space.items():
@@ -80,8 +76,6 @@ class ParafacSampler(BaseSampler):
         return relevant_search_space
 
     def sample_relative(self, study, trial, search_space):
-        logging.info("Using sample_relative for sampling.")
-
         if not search_space:
             return {}
 
@@ -150,8 +144,7 @@ class ParafacSampler(BaseSampler):
 
     def sample_independent(self, study, trial, param_name, param_distribution):
 
-        logging.info(f"Sampled independent: {param_name}, {param_distribution}")
-
+        logging.info(f"Using sample_independent for sampling.")
 
         # Fallback to random sampling
         return optuna.samplers.RandomSampler().sample_independent(
