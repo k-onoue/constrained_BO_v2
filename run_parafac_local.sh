@@ -13,7 +13,8 @@ mkdir -p results/dbs/
 mkdir -p temp/
 
 # Parameters
-ITER=300  # Number of iterations for ParafacSampler
+ITER=500  # Number of iterations for ParafacSampler
+# ITER=3000  # Number of iterations for ParafacSampler
 SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
 DIMENSIONS=(2 3 5 7)

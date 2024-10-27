@@ -287,11 +287,13 @@ class ParafacSampler(BaseSampler):
         Generate an array of random numbers with specified bounds and distribution type.
         Adds small noise if the evaluated entries are identical to avoid singular matrix errors.
         """
+        logging.info(f"Generating random array with low={low}, high={high}, shape={shape}, distribution_type={distribution_type}, mean={mean}, std_dev={std_dev}")
+
         # Handle case where all entries are identical by adding small random noise
         if low == high:
-            low = low - 1e-6
-            high = high + 1e-6
-            std_dev = std_dev + 1e-6
+            low = low - 1e-1
+            high = high + 1e-1
+            std_dev = std_dev + 1e-1
 
         if distribution_type == "uniform":
             # Generate uniform random numbers

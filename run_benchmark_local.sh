@@ -7,8 +7,8 @@ mkdir -p results/dbs/
 mkdir -p temp/
 
 # Params
-# ITER=500  # Number of iterations for samplers
-ITER=3000  # Number of iterations for samplers
+ITER=500  # Number of iterations for samplers
+# ITER=3000  # Number of iterations for samplers
 SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
 TEMP="temp"  # Temporary directory for log files
