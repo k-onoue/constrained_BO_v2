@@ -4,6 +4,7 @@ set -x  # Enable debug mode
 # Number of logical cores to assign per process
 LOGICAL_CORES=8  # 8 logical cores per experiment
 DATE="2024-10-26"  # Experiment date as a variable
+EXE_FILE="ackley/bo_parafac.py"  # Experiment file to run
 
 # Create necessary directories if they don't exist
 mkdir -p results/
@@ -42,7 +43,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                         echo "Running experiment in parallel: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED on cores $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1))"
                         
                         taskset -c $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1)) \
-                        python3 experiments/${DATE}/sphere/bo_parafac.py \
+                        python3 experiments/${DATE}/${EXE_FILE} \
                             --dimensions $DIM \
                             --cp_rank $CP_RANK \
                             --cp_mask_ratio $CP_MASK_RATIO \
@@ -58,7 +59,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                         # Run without taskset if not enough cores are available
                         echo "Running experiment without parallelization: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED"
                         
-                        python3 experiments/${DATE}/sphere/bo_parafac.py \
+                        python3 experiments/${DATE}/${EXE_FILE} \
                             --dimensions $DIM \
                             --cp_rank $CP_RANK \
                             --cp_mask_ratio $CP_MASK_RATIO \
