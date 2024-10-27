@@ -42,7 +42,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                         echo "Running experiment in parallel: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED on cores $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1))"
                         
                         taskset -c $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1)) \
-                        python3 experiments/${DATE}/ackley/bo_parafac.py \
+                        python3 experiments/${DATE}/sphere/bo_parafac.py \
                             --dimensions $DIM \
                             --cp_rank $CP_RANK \
                             --cp_mask_ratio $CP_MASK_RATIO \
