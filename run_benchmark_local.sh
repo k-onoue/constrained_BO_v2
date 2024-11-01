@@ -14,8 +14,8 @@ SEED_END=4  # Ending seed value (5 seeds in total)
 TEMP="temp"  # Temporary directory for log files
 
 # Sampler list excluding Bruteforce
-# SAMPLERS=("random" "tpe" "gp")
-SAMPLERS=("random")
+SAMPLERS=("random" "tpe" "gp")
+# SAMPLERS=("random")
 
 # Bruteforce will be run separately
 BRUTEFORCE_SAMPLER="bruteforce"
