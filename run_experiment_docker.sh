@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# 実験スクリプトが指定されているか確認
+if [ -z "$1" ]; then
+    echo "Error: No experiment script specified. Please provide the experiment script as an argument."
+    echo "Usage: bash run_experiment_docker.sh <experiment_script.sh>"
+    exit 1
+fi
+
+EXPERIMENT_SCRIPT="$1"
+
 # ローカルの results, logs, temp, dbs ディレクトリを作成
 mkdir -p results/
 mkdir -p results/logs/
@@ -8,9 +17,6 @@ mkdir -p temp/
 
 # 各ディレクトリに必要な書き込み権限を付与
 chmod -R 777 results/ temp/
-
-# 現在の日付を取得（YYYY-MM-DD形式）
-DATE="2024-10-25"
 
 # Dockerfile の作成
 dockerfile="Dockerfile"
@@ -40,7 +46,7 @@ COPY . .
 RUN chmod +x /app/run_experiments.sh
 
 # コンテナ起動時に実行するコマンドを指定
-CMD [\"bash\", \"/app/run_experiments.sh\"]
+CMD [\"bash\", \"/app/run_experiments.sh\", \"$EXPERIMENT_SCRIPT\"]
 "
 
 # Dockerfile を書き込み
@@ -63,8 +69,15 @@ echo "$config_content" > $config_file
 run_script="run_experiments.sh"
 
 run_script_content="#!/bin/bash
-# 実験スクリプトを実行
-bash /app/run_parafac_local.sh"
+# 実験スクリプトの引数を確認
+if [ -z \"\$1\" ]; then
+    echo \"Error: No experiment script specified. Please provide the script to run as an argument.\"
+    exit 1
+fi
+
+# 指定された実行ファイルを実行
+bash /app/\$1
+"
 
 # run_experiments.sh に書き込み
 echo "$run_script_content" > $run_script
