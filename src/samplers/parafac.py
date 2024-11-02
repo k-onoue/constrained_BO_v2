@@ -234,6 +234,46 @@ class ParafacSampler(BaseSampler):
 
             return mean_tensor, std_tensor
 
+    # def _suggest_ucb_candidates(
+    #     self,
+    #     mean_tensor: np.ndarray,
+    #     std_tensor: np.ndarray,
+    #     trade_off_param: float,
+    #     batch_size: int,
+    #     maximize: bool,
+    # ) -> list[tuple[int, ...]]:
+    #     """
+    #     Suggest candidate points based on UCB values, selecting the top batch_size points.
+
+    #     Returns:
+    #     - indices: list of tuples, the indices of the top batch_size points based on UCB.
+    #     """
+
+    #     def _ucb(mean_tensor, std_tensor, trade_off_param, maximize=True) -> np.ndarray:
+    #         mean_tensor = mean_tensor if maximize else -mean_tensor
+    #         ucb_values = mean_tensor + trade_off_param * std_tensor
+    #         return ucb_values
+
+    #     # Calculate the UCB values using the internal function
+    #     ucb_values = _ucb(mean_tensor, std_tensor, trade_off_param, maximize)
+
+    #     if self.unique_sampling:
+    #         # Mask out already evaluated points
+    #         ucb_values[self._tensor_eval_bool == True] = -np.inf
+
+    #     # Flatten the tensor and get the indices of the top UCB values
+    #     flat_indices = np.argsort(ucb_values.flatten())[::-1]  # Sort in descending order
+
+    #     top_indices = np.unravel_index(flat_indices[:batch_size], ucb_values.shape)
+    #     top_indices = list(zip(*top_indices))
+
+    #     for index in top_indices:
+    #         logging.info(
+    #             f"UCB value at {index}: {ucb_values[index]}, Mean: {mean_tensor[index]}, Std: {std_tensor[index]}"
+    #         )
+
+    #     return top_indices
+
     def _suggest_ucb_candidates(
         self,
         mean_tensor: np.ndarray,
@@ -244,7 +284,7 @@ class ParafacSampler(BaseSampler):
     ) -> list[tuple[int, ...]]:
         """
         Suggest candidate points based on UCB values, selecting the top batch_size points.
-
+        
         Returns:
         - indices: list of tuples, the indices of the top batch_size points based on UCB.
         """
@@ -264,13 +304,37 @@ class ParafacSampler(BaseSampler):
         # Flatten the tensor and get the indices of the top UCB values
         flat_indices = np.argsort(ucb_values.flatten())[::-1]  # Sort in descending order
 
+        # Select the top batch_size indices and retrieve corresponding statistics
         top_indices = np.unravel_index(flat_indices[:batch_size], ucb_values.shape)
         top_indices = list(zip(*top_indices))
 
+        # Extract selected mean and std values for the top candidates
+        selected_means = [mean_tensor[idx] for idx in top_indices]
+        selected_stds = [std_tensor[idx] for idx in top_indices]
+
+        # Calculate statistics for selected means and stds
+        mean_stats = {
+            "Max": np.max(selected_means),
+            "Min": np.min(selected_means),
+            "Mean": np.mean(selected_means),
+            "Std": np.std(selected_means),
+        }
+        std_stats = {
+            "Max": np.max(selected_stds),
+            "Min": np.min(selected_stds),
+            "Mean": np.mean(selected_stds),
+            "Std": np.std(selected_stds),
+        }
+
+        # Log UCB values and statistics for each selected candidate
         for index in top_indices:
             logging.info(
                 f"UCB value at {index}: {ucb_values[index]}, Mean: {mean_tensor[index]}, Std: {std_tensor[index]}"
             )
+        
+        # Log additional statistics for selected means and stds
+        logging.info(f"Candidate Mean Stats: {mean_stats}")
+        logging.info(f"Candidate Std Stats: {std_stats}")
 
         return top_indices
 
