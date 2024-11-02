@@ -86,3 +86,7 @@ docker run --rm \
 
 # 実行完了のメッセージ
 echo "Dockerコンテナが終了し、結果はローカルの results ディレクトリに保存されました。"
+
+# Dockerイメージを削除
+echo "Dockerイメージを削除しています..."
+docker rmi "$DOCKER_IMAGE"

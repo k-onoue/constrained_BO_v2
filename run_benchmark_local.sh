@@ -6,6 +6,8 @@ mkdir -p results/logs/
 mkdir -p results/dbs/
 mkdir -p temp/
 
+DATE="2024-11-01"
+
 # Params
 ITER=500  # Number of iterations for samplers
 # ITER=3000  # Number of iterations for samplers
@@ -36,7 +38,7 @@ for DIM in "${DIMENSIONS[@]}"; do
             echo "Running experiment with sampler $SAMPLER, dimension $DIM, seed $SEED..."
 
             # Run each experiment locally and log the output
-            python3 experiments/2024-10-26/sphere/bo_benchmark.py \
+            python3 experiments/${DATE}/sphere/bo_benchmark.py \
                 --sampler $SAMPLER \
                 --dimensions $DIM \
                 --seed $SEED \
