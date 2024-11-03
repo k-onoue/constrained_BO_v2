@@ -4,7 +4,7 @@ set -x  # Enable debug mode
 # Number of logical cores to assign per process
 LOGICAL_CORES=8  # 8 logical cores per experiment
 DATE="2024-11-03"  # Experiment date as a variable
-EXE_FILE="ackley/bo_parafac.py"  # Experiment file to run
+EXE_FILE="sphere/bo_parafac.py"  # Experiment file to run
 
 # Create necessary directories if they don't exist
 mkdir -p results/
@@ -33,16 +33,17 @@ for DIM in "${DIMENSIONS[@]}"; do
             for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
                 for SEED in $(seq $SEED_START $SEED_END); do
 
-                    # Set up experiment name and log file paths
+                    # Set up experiment name base
                     EXPERIMENT_NAME_BASE="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
                     
-                    # Loop over include_observed_points values if CP_MASK_RATIO is not 0
+                    # If CP_MASK_RATIO is 0, only run with include_observed_points=False
                     if (( $(echo "$CP_MASK_RATIO == 0" | bc -l) )); then
-                        INCLUDE_OBSERVED_OPTIONS=(False)  # Only one case for mask_ratio 0
+                        INCLUDE_OBSERVED_OPTIONS=(False)
                     else
-                        INCLUDE_OBSERVED_OPTIONS=(False True)  # Both cases for non-zero mask_ratio
+                        INCLUDE_OBSERVED_OPTIONS=(False True)
                     fi
                     
+                    # Loop over include_observed_points values
                     for INCLUDE_OBSERVED in "${INCLUDE_OBSERVED_OPTIONS[@]}"; do
 
                         # Update experiment name and log file paths for each include_observed_points setting
