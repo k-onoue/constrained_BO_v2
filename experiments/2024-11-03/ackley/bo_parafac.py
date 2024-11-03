@@ -53,6 +53,7 @@ def run_bo(settings):
         distribution_type=settings["cp_settings"]["random_dist_type"],  # Distribution type
         seed=settings["seed"],  # Random seed for reproducibility
         unique_sampling=settings["unique_sampling"],  # Apply the unique_sampling flag
+        include_observed_points=settings["cp_settings"]["include_observed_points"],  # Include observed points for masking
     )
 
     # Determine whether to minimize or maximize based on acq_maximize flag
@@ -117,6 +118,11 @@ def parse_args():
         help="Mask ratio used in the CP decomposition.",
     )
     parser.add_argument(
+        "--include_observed_points",
+        action="store_true",
+        help="Whether to include observed points for masking in the ParafacSampler.",
+    )
+    parser.add_argument(
         "--cp_random_dist_type",
         type=str,
         choices=["uniform", "normal"],
@@ -152,14 +158,16 @@ def parse_args():
 if __name__ == "__main__":
     # Get the script name to use for logging and experiment identification
     base_script_name = os.path.splitext(__file__.split("/")[-1])[0]
+    obj_name = os.path.splitext(__file__.split("/")[-2])[0]
 
     # Parse the command-line arguments
     args = parse_args()
 
     # Concatenate parameters to create a unique script name for each configuration
     script_name = (
-        f"{base_script_name}_dim{args.dimensions}_rank{args.cp_rank}_"
-        f"mask{args.cp_mask_ratio}_tradeoff{args.acq_trade_off_param}_seed{args.seed}"
+        f"{obj_name}_{base_script_name}_dim{args.dimensions}_rank{args.cp_rank}_"
+        f"mask{args.cp_mask_ratio}_tradeoff{args.acq_trade_off_param}_seed{args.seed}_"
+        f"includeobs{args.include_observed_points}"
     )
 
     # Set up logging and retrieve the log filename
@@ -182,6 +190,7 @@ if __name__ == "__main__":
             "rank": args.cp_rank,  # Rank for the CP decomposition
             "als_iterations": args.cp_als_iterations,  # ALS iterations for the CP decomposition
             "mask_ratio": args.cp_mask_ratio,  # Mask ratio used in the CP decomposition
+            "include_observed_points": args.include_observed_points,  # Include observed points for masking
             "random_dist_type": args.cp_random_dist_type,  # Distribution type for random sampling
         },
         "acqf_settings": {

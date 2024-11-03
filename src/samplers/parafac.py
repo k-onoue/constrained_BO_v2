@@ -240,7 +240,7 @@ class ParafacSampler(BaseSampler):
         distribution_type: str,
     ) -> np.ndarray:
         mask_tensor = None
-        if self.mask_ratio is not None:
+        if self.mask_ratio != 0:
             mask_indices = self._select_mask_indices(
                 tensor_eval.shape, tensor_eval_bool
             )
