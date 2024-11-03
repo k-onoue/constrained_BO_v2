@@ -18,7 +18,8 @@ SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
 DIMENSIONS=(2 3 5 7)
 CP_RANKS=(2)
-CP_MASK_RATIOS=(0 0.1)
+# CP_MASK_RATIOS=(0 0.1)
+CP_MASK_RATIOS=(0.1)
 TRADE_OFF_PARAMS=(3)
 CP_RANDOM_DIST_TYPE="uniform"  # Distribution type for random sampling
 
@@ -36,7 +37,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                     # Set up experiment name base
                     EXPERIMENT_NAME_BASE="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
                     
-                    # Check if CP_MASK_RATIO is 0 and run only with include_observed_points=False
+                    # If CP_MASK_RATIO is 0, only run with include_observed_points=False
                     if (( $(echo "$CP_MASK_RATIO == 0" | bc -l) )); then
                         INCLUDE_OBSERVED=False
                         EXPERIMENT_NAME="${EXPERIMENT_NAME_BASE}_includeObs${INCLUDE_OBSERVED}"
@@ -52,6 +53,7 @@ for DIM in "${DIMENSIONS[@]}"; do
                             --iter_bo $ITER \
                             --cp_random_dist_type $CP_RANDOM_DIST_TYPE"
                         
+                        # Execute without --include_observed_points
                         echo "Running experiment with mask_ratio 0, include_observed_points=False"
                         $CMD > "$LOG_FILE" 2>&1
 
