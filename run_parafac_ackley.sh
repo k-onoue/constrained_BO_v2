@@ -4,7 +4,7 @@ set -x  # Enable debug mode
 # Number of logical cores to assign per process
 LOGICAL_CORES=8  # 8 logical cores per experiment
 DATE="2024-11-03"  # Experiment date as a variable
-EXE_FILE="sphere/bo_parafac.py"  # Experiment file to run
+EXE_FILE="ackley/bo_parafac.py"  # Experiment file to run
 
 # Create necessary directories if they don't exist
 mkdir -p results/
@@ -36,17 +36,9 @@ for DIM in "${DIMENSIONS[@]}"; do
                     # Set up experiment name base
                     EXPERIMENT_NAME_BASE="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
                     
-                    # If CP_MASK_RATIO is 0, only run with include_observed_points=False
+                    # Check if CP_MASK_RATIO is 0 and run only with include_observed_points=False
                     if (( $(echo "$CP_MASK_RATIO == 0" | bc -l) )); then
-                        INCLUDE_OBSERVED_OPTIONS=(False)
-                    else
-                        INCLUDE_OBSERVED_OPTIONS=(False True)
-                    fi
-                    
-                    # Loop over include_observed_points values
-                    for INCLUDE_OBSERVED in "${INCLUDE_OBSERVED_OPTIONS[@]}"; do
-
-                        # Update experiment name and log file paths for each include_observed_points setting
+                        INCLUDE_OBSERVED=False
                         EXPERIMENT_NAME="${EXPERIMENT_NAME_BASE}_includeObs${INCLUDE_OBSERVED}"
                         LOG_FILE="temp/${EXPERIMENT_NAME}.log"
                         
@@ -60,34 +52,36 @@ for DIM in "${DIMENSIONS[@]}"; do
                             --iter_bo $ITER \
                             --cp_random_dist_type $CP_RANDOM_DIST_TYPE"
                         
-                        # Add --include_observed_points if INCLUDE_OBSERVED is True
-                        if [ "$INCLUDE_OBSERVED" == "True" ]; then
-                            CMD+=" --include_observed_points"
-                        fi
-                        
-                        # Check if sufficient cores are available for parallel execution
-                        if [ $((CPU_CORE_START + LOGICAL_CORES)) -le $TOTAL_CORES ]; then
-                            echo "Running experiment in parallel: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED, include_observed_points $INCLUDE_OBSERVED on cores $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1))"
+                        echo "Running experiment with mask_ratio 0, include_observed_points=False"
+                        $CMD > "$LOG_FILE" 2>&1
+
+                    else
+                        # Run both include_observed_points=False and include_observed_points=True
+                        for INCLUDE_OBSERVED in False True; do
+                            EXPERIMENT_NAME="${EXPERIMENT_NAME_BASE}_includeObs${INCLUDE_OBSERVED}"
+                            LOG_FILE="temp/${EXPERIMENT_NAME}.log"
+
+                            # Base command
+                            CMD="python3 experiments/${DATE}/${EXE_FILE} \
+                                --dimensions $DIM \
+                                --cp_rank $CP_RANK \
+                                --cp_mask_ratio $CP_MASK_RATIO \
+                                --acq_trade_off_param $TRADE_OFF_PARAM \
+                                --seed $SEED \
+                                --iter_bo $ITER \
+                                --cp_random_dist_type $CP_RANDOM_DIST_TYPE"
                             
-                            taskset -c $CPU_CORE_START-$((CPU_CORE_START + LOGICAL_CORES - 1)) \
-                            $CMD > "$LOG_FILE" 2>&1 &
+                            # Add --include_observed_points if INCLUDE_OBSERVED is True
+                            if [ "$INCLUDE_OBSERVED" == "True" ]; then
+                                CMD+=" --include_observed_points"
+                            fi
                             
-                            # Update CPU core range for the next process
-                            CPU_CORE_START=$((CPU_CORE_START + LOGICAL_CORES))
-                        else
-                            # Run without taskset if not enough cores are available
-                            echo "Running experiment without parallelization: dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED, include_observed_points $INCLUDE_OBSERVED"
-                            
+                            echo "Running experiment with mask_ratio $CP_MASK_RATIO, include_observed_points=$INCLUDE_OBSERVED"
                             $CMD > "$LOG_FILE" 2>&1
-                        fi
+                        done
+                    fi
 
-                        # Reset CPU core start if it exceeds the total cores
-                        if [ $CPU_CORE_START -ge $TOTAL_CORES ]; then
-                            CPU_CORE_START=0
-                        fi
-
-                        echo "Log saved to $LOG_FILE"
-                    done
+                    echo "Log saved to $LOG_FILE"
                 done
             done
         done

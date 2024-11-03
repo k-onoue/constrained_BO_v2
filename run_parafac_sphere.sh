@@ -4,7 +4,7 @@ set -x  # Enable debug mode
 # Number of logical cores to assign per process
 LOGICAL_CORES=8  # 8 logical cores per experiment
 DATE="2024-11-03"  # Experiment date as a variable
-EXE_FILE="ackley/bo_parafac.py"  # Experiment file to run
+EXE_FILE="sphere/bo_parafac.py"  # Experiment file to run
 
 # Create necessary directories if they don't exist
 mkdir -p results/
