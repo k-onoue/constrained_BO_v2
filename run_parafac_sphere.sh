@@ -26,6 +26,10 @@ CP_RANDOM_DIST_TYPE="uniform"  # Distribution type for random sampling
 # Define initial CPU core range for taskset
 CPU_CORE_START=0
 TOTAL_CORES=$(nproc)  # Get total available cores
+MAX_CONCURRENT_JOBS=$((TOTAL_CORES / LOGICAL_CORES))  # Calculate max concurrent jobs
+
+# Counter for active processes
+active_jobs=0
 
 # Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
 for DIM in "${DIMENSIONS[@]}"; do
@@ -43,8 +47,9 @@ for DIM in "${DIMENSIONS[@]}"; do
                         EXPERIMENT_NAME="${EXPERIMENT_NAME_BASE}_includeObs${INCLUDE_OBSERVED}"
                         LOG_FILE="temp/${EXPERIMENT_NAME}.log"
                         
-                        # Base command
-                        CMD="python3 experiments/${DATE}/${EXE_FILE} \
+                        # Calculate core range for this job
+                        CORE_RANGE="$((CPU_CORE_START))-$((CPU_CORE_START + LOGICAL_CORES - 1))"
+                        CMD="taskset -c $CORE_RANGE python3 experiments/${DATE}/${EXE_FILE} \
                             --dimensions $DIM \
                             --cp_rank $CP_RANK \
                             --cp_mask_ratio $CP_MASK_RATIO \
@@ -53,18 +58,22 @@ for DIM in "${DIMENSIONS[@]}"; do
                             --iter_bo $ITER \
                             --cp_random_dist_type $CP_RANDOM_DIST_TYPE"
                         
-                        # Execute without --include_observed_points
-                        echo "Running experiment with mask_ratio 0, include_observed_points=False"
-                        $CMD > "$LOG_FILE" 2>&1
-
+                        # Execute command in background
+                        echo "Running experiment with mask_ratio 0, include_observed_points=False on cores $CORE_RANGE"
+                        $CMD > "$LOG_FILE" 2>&1 &
+                        
+                        # Update CPU_CORE_START and active_jobs count
+                        CPU_CORE_START=$(( (CPU_CORE_START + LOGICAL_CORES) % TOTAL_CORES ))
+                        active_jobs=$((active_jobs + 1))
+                        
                     else
-                        # Run both include_observed_points=False and include_observed_points=True
                         for INCLUDE_OBSERVED in False True; do
                             EXPERIMENT_NAME="${EXPERIMENT_NAME_BASE}_includeObs${INCLUDE_OBSERVED}"
                             LOG_FILE="temp/${EXPERIMENT_NAME}.log"
 
-                            # Base command
-                            CMD="python3 experiments/${DATE}/${EXE_FILE} \
+                            # Calculate core range for this job
+                            CORE_RANGE="$((CPU_CORE_START))-$((CPU_CORE_START + LOGICAL_CORES - 1))"
+                            CMD="taskset -c $CORE_RANGE python3 experiments/${DATE}/${EXE_FILE} \
                                 --dimensions $DIM \
                                 --cp_rank $CP_RANK \
                                 --cp_mask_ratio $CP_MASK_RATIO \
@@ -78,11 +87,22 @@ for DIM in "${DIMENSIONS[@]}"; do
                                 CMD+=" --include_observed_points"
                             fi
                             
-                            echo "Running experiment with mask_ratio $CP_MASK_RATIO, include_observed_points=$INCLUDE_OBSERVED"
-                            $CMD > "$LOG_FILE" 2>&1
+                            # Execute command in background
+                            echo "Running experiment with mask_ratio $CP_MASK_RATIO, include_observed_points=$INCLUDE_OBSERVED on cores $CORE_RANGE"
+                            $CMD > "$LOG_FILE" 2>&1 &
+                            
+                            # Update CPU_CORE_START and active_jobs count
+                            CPU_CORE_START=$(( (CPU_CORE_START + LOGICAL_CORES) % TOTAL_CORES ))
+                            active_jobs=$((active_jobs + 1))
                         done
                     fi
 
+                    # Check if active_jobs reached max limit
+                    if (( active_jobs >= MAX_CONCURRENT_JOBS )); then
+                        wait -n  # Wait for at least one job to finish
+                        active_jobs=$((active_jobs - 1))
+                    fi
+                    
                     echo "Log saved to $LOG_FILE"
                 done
             done
