@@ -9,7 +9,7 @@ from _src import search_log_files
 # 設定部分
 TEST_FUNC = "ackley"
 BENCHMARK_PATH_BASE = "/Users/keisukeonoue/ws/constrained_BO_v2/results_benchmark"
-PARAFAC_PATH_BASE = "/Users/keisukeonoue/ws/constrained_BO_v2/results_sphere_8"
+PARAFAC_PATH_BASE = "/Users/keisukeonoue/ws/constrained_BO_v2/results"
 IMAGE_SAVE_BASE = os.path.join(PARAFAC_PATH_BASE, "images")
 PROBLEM_SETTING = {
     "dim": ["dim2", "dim3", "dim5", "dim7"],
