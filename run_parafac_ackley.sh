@@ -16,7 +16,8 @@ mkdir -p temp/
 ITER=500  # Number of iterations for ParafacSampler
 SEED_START=0  # Starting seed value
 SEED_END=4  # Ending seed value (5 seeds in total)
-DIMENSIONS=(2 3 5 7)
+# DIMENSIONS=(2 3 5 7)
+DIMENSIONS=(5)
 CP_RANKS=(2)
 # CP_MASK_RATIOS=(0 0.1)
 CP_MASK_RATIOS=(0.1)
