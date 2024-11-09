@@ -21,7 +21,7 @@ DIMENSIONS=(5)
 CP_RANKS=(2)
 # CP_MASK_RATIOS=(0 0.1)
 CP_MASK_RATIOS=(0.1)
-TRADE_OFF_PARAMS=(3)
+TRADE_OFF_PARAMS=(100)
 CP_RANDOM_DIST_TYPE="uniform"  # Distribution type for random sampling
 
 # Define initial CPU core range for taskset

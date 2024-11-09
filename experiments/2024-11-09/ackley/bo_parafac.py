@@ -40,8 +40,6 @@ def run_bo(settings):
     """
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
 
-
-
     dimensions = settings["dimensions"]  # Number of dimensions for the Ackley function
     
     # Set up the ParafacSampler for Bayesian optimization
@@ -83,6 +81,12 @@ def run_bo(settings):
     # Log final results
     logging.info(f"Best value: {study.best_value}")
     logging.info(f"Best params: {study.best_params}")
+
+    ###########################################################################
+    # Plot the optimization history
+    fig = optuna.visualization.plot_optimization_history(study)
+    fig.update_layout(title=f"Optimization History: {settings['name']}")
+    fig.show()
 
 
 def parse_args():

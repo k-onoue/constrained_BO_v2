@@ -86,8 +86,10 @@ class ParafacSampler(BaseSampler):
             maximize=self._maximize,
         )
 
-        # Randomly select next indices
-        next_index = random.sample(next_indices, 1)[0]
+        # ここでランダムに選んでも意味がない
+        # # Randomly select next indices
+        # next_index = random.sample(next_indices, 1)[0]
+        next_index = next_indices[0]
 
         # Convert indices back to parameter values
         params = {}
@@ -266,17 +268,74 @@ class ParafacSampler(BaseSampler):
         )
         return cp_to_tensor(cp_tensor)
 
+    # def _calculate_mean_std_tensors(
+    #     self,
+    #     tensors_list: list[np.ndarray],
+    #     tensor_eval: np.ndarray,
+    #     tensor_eval_bool: np.ndarray,
+    # ) -> tuple[np.ndarray, np.ndarray]:
+    #     tensors_stack = np.stack(tensors_list)
+    #     mean_tensor = np.mean(tensors_stack, axis=0)
+    #     std_tensor = np.std(tensors_stack, axis=0)
+    #     mean_tensor[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
+    #     std_tensor[tensor_eval_bool] = 0
+    #     return mean_tensor, std_tensor
+    
     def _calculate_mean_std_tensors(
         self,
         tensors_list: list[np.ndarray],
         tensor_eval: np.ndarray,
         tensor_eval_bool: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
+        # Stack the list of tensors into a 3D array
         tensors_stack = np.stack(tensors_list)
-        mean_tensor = np.mean(tensors_stack, axis=0)
-        std_tensor = np.std(tensors_stack, axis=0)
+
+
+
+
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        # 多分平均と分散の埋め方が間違っている（というかそうであってほしい）
+
+
+
+
+
+        # Calculate mean and standard deviation across tensors for standardization
+        stack_mean = np.mean(tensors_stack, axis=0, keepdims=True)
+        stack_std = np.std(tensors_stack, axis=0, keepdims=True)
+        standardized_stack = (tensors_stack - stack_mean) / (stack_std + 1e-8)  # Avoid division by zero
+
+        # Calculate mean and standard deviation from the standardized tensors
+        mean_tensor = np.mean(standardized_stack, axis=0)
+        std_tensor = np.std(standardized_stack, axis=0)
+
+        # Replace elements in evaluated positions
         mean_tensor[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
         std_tensor[tensor_eval_bool] = 0
+
         return mean_tensor, std_tensor
 
     def _suggest_ucb_candidates(
@@ -287,6 +346,25 @@ class ParafacSampler(BaseSampler):
         batch_size: int,
         maximize: bool,
     ) -> list[tuple[int, ...]]:
+        
+        # Calculate overall mean and std stats for logging
+        mean_stats = {
+            "Max": np.max(mean_tensor),
+            "Min": np.min(mean_tensor),
+            "Mean": np.mean(mean_tensor),
+            "Std": np.std(mean_tensor),
+        }
+        std_stats = {
+            "Max": np.max(std_tensor),
+            "Min": np.min(std_tensor),
+            "Mean": np.mean(std_tensor),
+            "Std": np.std(std_tensor),
+        }
+
+        logging.info(f"Candidate Mean Stats: {mean_stats}")
+        logging.info(f"Candidate Std Stats: {std_stats}")
+        
+        # Define UCB calculation
         def _ucb(mean_tensor, std_tensor, trade_off_param, maximize=True) -> np.ndarray:
             mean_tensor = mean_tensor if maximize else -mean_tensor
             ucb_values = mean_tensor + trade_off_param * std_tensor
@@ -297,28 +375,52 @@ class ParafacSampler(BaseSampler):
         if self.unique_sampling:
             ucb_values[self._tensor_eval_bool == True] = -np.inf
 
+        # Get indices of top and bottom UCB values
         flat_indices = np.argsort(ucb_values.flatten())[::-1]
+        top_indices = np.unravel_index(flat_indices[:10], ucb_values.shape)
+        top_indices = list(zip(*top_indices))
+
+        bottom_indices = np.unravel_index(flat_indices[-10:], ucb_values.shape)
+        bottom_indices = list(zip(*bottom_indices))
+
+        # Calculate Mean and Std stats for top 10 UCB values
+        top_means = [mean_tensor[idx] for idx in top_indices]
+        top_stds = [std_tensor[idx] for idx in top_indices]
+        top_mean_stats = {
+            "Max": np.max(top_means),
+            "Min": np.min(top_means),
+            "Mean": np.mean(top_means),
+            "Std": np.std(top_means),
+        }
+        top_std_stats = {
+            "Max": np.max(top_stds),
+            "Min": np.min(top_stds),
+            "Mean": np.mean(top_stds),
+            "Std": np.std(top_stds),
+        }
+        logging.info(f"Top 10 Mean Stats: {top_mean_stats}")
+        logging.info(f"Top 10 Std Stats: {top_std_stats}")
+
+        # Calculate Mean and Std stats for bottom 10 UCB values
+        bottom_means = [mean_tensor[idx] for idx in bottom_indices]
+        bottom_stds = [std_tensor[idx] for idx in bottom_indices]
+        bottom_mean_stats = {
+            "Max": np.max(bottom_means),
+            "Min": np.min(bottom_means),
+            "Mean": np.mean(bottom_means),
+            "Std": np.std(bottom_means),
+        }
+        bottom_std_stats = {
+            "Max": np.max(bottom_stds),
+            "Min": np.min(bottom_stds),
+            "Mean": np.mean(bottom_stds),
+            "Std": np.std(bottom_stds),
+        }
+        logging.info(f"Bottom 10 Mean Stats: {bottom_mean_stats}")
+        logging.info(f"Bottom 10 Std Stats: {bottom_std_stats}")
+
+        # Select top candidates based on batch size
         top_indices = np.unravel_index(flat_indices[:batch_size], ucb_values.shape)
         top_indices = list(zip(*top_indices))
 
-        selected_means = [mean_tensor[idx] for idx in top_indices]
-        selected_stds = [std_tensor[idx] for idx in top_indices]
-
-        mean_stats = {
-            "Max": np.max(selected_means),
-            "Min": np.min(selected_means),
-            "Mean": np.mean(selected_means),
-            "Std": np.std(selected_means),
-        }
-        std_stats = {
-            "Max": np.max(selected_stds),
-            "Min": np.min(selected_stds),
-            "Mean": np.mean(selected_stds),
-            "Std": np.std(selected_stds),
-        }
-
-        logging.info(f"Candidate Mean Stats: {mean_stats}")
-        logging.info(f"Candidate Std Stats: {std_stats}")
-
         return top_indices
-

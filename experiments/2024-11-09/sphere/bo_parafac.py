@@ -40,6 +40,7 @@ def run_bo(settings):
         distribution_type=settings["cp_settings"]["random_dist_type"],  # Distribution type
         seed=settings["seed"],  # Random seed for reproducibility
         unique_sampling=settings["unique_sampling"],  # Apply the unique_sampling flag
+        decomp_iter_num=settings["decomp_num"],  # Number of decompositions
     )
 
     # Determine whether to minimize or maximize based on acq_maximize flag
@@ -69,6 +70,12 @@ def run_bo(settings):
     # Log final results
     logging.info(f"Best value: {study.best_value}")
     logging.info(f"Best params: {study.best_params}")
+
+    ###########################################################################
+    # Plot the optimization history
+    fig = optuna.visualization.plot_optimization_history(study)
+    fig.update_layout(title=f"Optimization History: {settings['name']}")
+    fig.show()
 
 
 def parse_args():
@@ -132,6 +139,12 @@ def parse_args():
         default=2,
         help="Number of dimensions for the Ackley function.",
     )
+    parser.add_argument(
+        "--decomp_num",
+        type=int,
+        default=5,
+        help="Number of decompositions for the ParafacSampler.",
+    )
 
     return parser.parse_args()
 
@@ -165,6 +178,7 @@ if __name__ == "__main__":
         "iter_bo": args.iter_bo,  # Number of iterations for Bayesian optimization
         "storage": storage_url,  # Full path for the SQLite database in DB_DIR
         "unique_sampling": args.unique_sampling,  # Apply the unique_sampling flag
+        "decomp_num": args.decomp_num,  # Number of decompositions for the ParafacSampler
         "cp_settings": {
             "rank": args.cp_rank,  # Rank for the CP decomposition
             "als_iterations": args.cp_als_iterations,  # ALS iterations for the CP decomposition
@@ -182,222 +196,3 @@ if __name__ == "__main__":
     # Run the Bayesian optimization experiment
     run_bo(settings)
 
-
-# ackley_1
-"""
-#!/bin/bash
-
-# Create results and logs directories if they don't exist
-mkdir -p results/
-mkdir -p results/logs/
-mkdir -p results/dbs/
-mkdir -p temp/
-
-# Parameters
-ITER=500  # Number of iterations for ParafacSampler
-SEED_START=0  # Starting seed value
-SEED_END=4  # Ending seed value (5 seeds in total)
-TEMP="temp"  # Temporary directory for log files
-
-# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
-DIMENSIONS=(2 3 5 7)
-CP_RANKS=(1 2)
-CP_MASK_RATIOS=(0.1 0.2 0.33)
-TRADE_OFF_PARAMS=(1 3 5)
-
-
-# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
-for DIM in "${DIMENSIONS[@]}"; do
-    for CP_RANK in "${CP_RANKS[@]}"; do
-        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
-            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
-                for SEED in $(seq $SEED_START $SEED_END); do
-
-                    # Set up experiment name and log file paths
-                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
-                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
-
-                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
-
-                    # Run each experiment and log the output
-                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
-                        --dimensions $DIM \
-                        --cp_rank $CP_RANK \
-                        --cp_mask_ratio $CP_MASK_RATIO \
-                        --acq_trade_off_param $TRADE_OFF_PARAM \
-                        --seed $SEED \
-                        --iter_bo $ITER \
-                        > "$LOG_FILE" 2>&1
-
-                    echo "Log saved to $LOG_FILE"
-                done
-            done
-        done
-    done
-done
-"""
-
-# ackley_2: 重複サンプリングを許さない
-"""
-#!/bin/bash
-
-# Create results and logs directories if they don't exist
-mkdir -p results/
-mkdir -p results/logs/
-mkdir -p results/dbs/
-mkdir -p temp/
-
-# Parameters
-ITER=500  # Number of iterations for ParafacSampler
-SEED_START=0  # Starting seed value
-SEED_END=4  # Ending seed value (5 seeds in total)
-TEMP="temp"  # Temporary directory for log files
-
-# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
-DIMENSIONS=(2 3 5 7)
-CP_RANKS=(1 2)
-CP_MASK_RATIOS=(0.1 0.2 0.33)
-TRADE_OFF_PARAMS=(1 3 5)
-
-
-# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
-for DIM in "${DIMENSIONS[@]}"; do
-    for CP_RANK in "${CP_RANKS[@]}"; do
-        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
-            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
-                for SEED in $(seq $SEED_START $SEED_END); do
-
-                    # Set up experiment name and log file paths
-                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
-                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
-
-                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
-
-                    # Run each experiment and log the output
-                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
-                        --dimensions $DIM \
-                        --cp_rank $CP_RANK \
-                        --cp_mask_ratio $CP_MASK_RATIO \
-                        --acq_trade_off_param $TRADE_OFF_PARAM \
-                        --seed $SEED \
-                        --iter_bo $ITER \
-                        --unique_sampling \
-                        > "$LOG_FILE" 2>&1
-
-                    echo "Log saved to $LOG_FILE"
-                done
-            done
-        done
-    done
-done
-"""
-
-# ackley_3: cp ランクと性能 
-"""
-#!/bin/bash
-
-# Create results and logs directories if they don't exist
-mkdir -p results/
-mkdir -p results/logs/
-mkdir -p results/dbs/
-mkdir -p temp/
-
-# Parameters
-ITER=500  # Number of iterations for ParafacSampler
-SEED_START=0  # Starting seed value
-SEED_END=4  # Ending seed value (5 seeds in total)
-TEMP="temp"  # Temporary directory for log files
-
-# Define the list of dimensions, cp_rank, cp_mask_ratio, and trade_off_param values
-DIMENSIONS=(2 3 5 7)
-CP_RANKS=(1 2 3 4)
-CP_MASK_RATIOS=(0.33)
-TRADE_OFF_PARAMS=(3)
-
-
-# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
-for DIM in "${DIMENSIONS[@]}"; do
-    for CP_RANK in "${CP_RANKS[@]}"; do
-        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
-            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
-                for SEED in $(seq $SEED_START $SEED_END); do
-
-                    # Set up experiment name and log file paths
-                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
-                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
-
-                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
-
-                    # Run each experiment and log the output
-                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
-                        --dimensions $DIM \
-                        --cp_rank $CP_RANK \
-                        --cp_mask_ratio $CP_MASK_RATIO \
-                        --acq_trade_off_param $TRADE_OFF_PARAM \
-                        --seed $SEED \
-                        --iter_bo $ITER \
-                        > "$LOG_FILE" 2>&1
-
-                    echo "Log saved to $LOG_FILE"
-                done
-            done
-        done
-    done
-done
-"""
-
-# ackley_4: normal distribution
-"""
-#!/bin/bash
-
-# Create results and logs directories if they don't exist
-mkdir -p results/
-mkdir -p results/logs/
-mkdir -p results/dbs/
-mkdir -p temp/
-
-# Parameters
-ITER=500  # Number of iterations for ParafacSampler
-SEED_START=0  # Starting seed value
-SEED_END=4  # Ending seed value (5 seeds in total)
-TEMP="temp"  # Temporary directory for log files
-
-# Define the list of dimensions, cp_rank, cp_mask_ratio, trade_off_param values, and distribution type
-DIMENSIONS=(2 3 5 7)
-CP_RANKS=(1 2 3 4)
-CP_MASK_RATIOS=(0.33)
-TRADE_OFF_PARAMS=(3)
-CP_RANDOM_DIST_TYPE="normal"  # Distribution type for random sampling
-
-# Loop through dimensions, cp_rank, cp_mask_ratio, trade_off_param, and seeds
-for DIM in "${DIMENSIONS[@]}"; do
-    for CP_RANK in "${CP_RANKS[@]}"; do
-        for CP_MASK_RATIO in "${CP_MASK_RATIOS[@]}"; do
-            for TRADE_OFF_PARAM in "${TRADE_OFF_PARAMS[@]}"; do
-                for SEED in $(seq $SEED_START $SEED_END); do
-
-                    # Set up experiment name and log file paths
-                    EXPERIMENT_NAME="benchmark_parafac_dim${DIM}_rank${CP_RANK}_mask${CP_MASK_RATIO}_tradeoff${TRADE_OFF_PARAM}_seed${SEED}"
-                    LOG_FILE="${TEMP}/${EXPERIMENT_NAME}.log"
-
-                    echo "Running experiment with ParafacSampler, dimension $DIM, cp_rank $CP_RANK, mask_ratio $CP_MASK_RATIO, trade_off_param $TRADE_OFF_PARAM, seed $SEED..."
-
-                    # Run each experiment and log the output
-                    python3 experiments/2024-10-25/ackley/bo_parafac.py \
-                        --dimensions $DIM \
-                        --cp_rank $CP_RANK \
-                        --cp_mask_ratio $CP_MASK_RATIO \
-                        --acq_trade_off_param $TRADE_OFF_PARAM \
-                        --seed $SEED \
-                        --iter_bo $ITER \
-                        --cp_random_dist_type $CP_RANDOM_DIST_TYPE \
-                        > "$LOG_FILE" 2>&1
-
-                    echo "Log saved to $LOG_FILE"
-                done
-            done
-        done
-    done
-done
-
-"""

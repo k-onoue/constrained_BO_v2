@@ -62,6 +62,13 @@ def run_bo(settings):
     logging.info(f"Best value: {study.best_value}")
     logging.info(f"Best params: {study.best_params}")
 
+    ###########################################################################
+    # Plot the optimization history
+    fig = optuna.visualization.plot_optimization_history(study)
+    fig.update_layout(title=f"Optimization History: {settings['name']}")
+    fig.show()
+
+
 
 def parse_args():
     """
