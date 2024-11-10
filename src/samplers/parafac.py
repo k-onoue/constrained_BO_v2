@@ -17,7 +17,7 @@ class ParafacSampler(BaseSampler):
         als_iter_num: int = 10,
         mask_ratio: float = 0.2,
         trade_off_param: float = 1.0,
-        distribution_type: Literal["uniform", "normal"] = "uniform",
+        distribution_type: Literal["normal", "uniform"] = "normal",
         seed: int = None,
         unique_sampling: bool = False,
         decomp_iter_num: int = 5,
@@ -42,6 +42,16 @@ class ParafacSampler(BaseSampler):
         self._tensor_eval = None
         self._tensor_eval_bool = None
         self._maximize = None
+
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        # Debuging
+        self.mean_tensor = None
+        self.std_tensor = None
+        # self.save_dir = "tensor_dir"
+        self.save_dir = None
 
     def infer_relative_search_space(self, study, trial):
         search_space = optuna.search_space.intersection_search_space(
@@ -151,6 +161,36 @@ class ParafacSampler(BaseSampler):
                     self._tensor_eval_bool[index] = True
                     self._evaluated_indices.append(index)
 
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        trial_num = trial.number - 1
+        if trial_num >= 1:
+            self._save_tensor(self._tensor_eval, "tensor_eval", trial_num)
+            self._save_tensor(self._tensor_eval_bool, "tensor_eval_bool", trial_num)
+            self._save_tensor(self.mean_tensor, "mean_tensor", trial_num)
+            self._save_tensor(self.std_tensor, "std_tensor", trial_num)
+    
+    def _save_tensor(self, tensor: np.ndarray, name: str, trial_index: int):
+        """
+        Save a tensor to the specified directory with a given name and trial index.
+        """
+        import os
+        if self.save_dir:
+            os.makedirs(self.save_dir, exist_ok=True)
+            filepath = os.path.join(self.save_dir, f"{name}_trial{trial_index}.npy")
+            np.save(filepath, tensor)
+            print(f"Saved {name} for trial {trial_index} at {filepath}")
+
     def _fit(
         self,
         tensor_eval: np.ndarray,
@@ -231,6 +271,43 @@ class ParafacSampler(BaseSampler):
             mask_tensor[tuple(mask_index)] = False
         return mask_tensor
 
+    # def _decompose_with_optional_mask(
+    #     self,
+    #     tensor_eval: np.ndarray,
+    #     tensor_eval_bool: np.ndarray,
+    #     eval_min: float,
+    #     eval_max: float,
+    #     eval_mean: float,
+    #     eval_std: float,
+    #     distribution_type: str,
+    # ) -> np.ndarray:
+    #     mask_tensor = None
+    #     if self.mask_ratio != 0:
+    #         mask_indices = self._select_mask_indices(
+    #             tensor_eval.shape, tensor_eval_bool
+    #         )
+    #         mask_tensor = self._create_mask_tensor(tensor_eval.shape, mask_indices)
+
+    #     init_tensor_eval = self._generate_random_array(
+    #         low=eval_min,
+    #         high=eval_max,
+    #         shape=tensor_eval.shape,
+    #         distribution_type=distribution_type,
+    #         mean=eval_mean,
+    #         std_dev=eval_std,
+    #     )
+    #     init_tensor_eval[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
+
+    #     cp_tensor = parafac(
+    #         init_tensor_eval,
+    #         rank=self.cp_rank,
+    #         mask=mask_tensor,
+    #         n_iter_max=self.als_iter_num,
+    #         init="random",
+    #         random_state=self.rng,
+    #     )
+    #     return cp_to_tensor(cp_tensor)
+
     def _decompose_with_optional_mask(
         self,
         tensor_eval: np.ndarray,
@@ -241,6 +318,11 @@ class ParafacSampler(BaseSampler):
         eval_std: float,
         distribution_type: str,
     ) -> np.ndarray:
+        # 標準化された tensor_eval を作成
+        standardized_tensor_eval = (tensor_eval - eval_mean) / (eval_std + 1e-8)  # eval_stdが0の場合のために小さな値を足す
+        standardized_tensor_eval[~tensor_eval_bool] = np.nan  # 未観測点を NaN に設定
+
+        # マスクが必要な場合に設定
         mask_tensor = None
         if self.mask_ratio != 0:
             mask_indices = self._select_mask_indices(
@@ -248,16 +330,20 @@ class ParafacSampler(BaseSampler):
             )
             mask_tensor = self._create_mask_tensor(tensor_eval.shape, mask_indices)
 
+        # 標準正規分布に従って未観測点をランダムに生成
         init_tensor_eval = self._generate_random_array(
-            low=eval_min,
-            high=eval_max,
+            low=-1,  # 標準化後の値の範囲として適当な値を設定
+            high=1,
             shape=tensor_eval.shape,
-            distribution_type=distribution_type,
-            mean=eval_mean,
-            std_dev=eval_std,
+            distribution_type="normal",  # 標準正規分布
+            mean=0,
+            std_dev=1,
         )
-        init_tensor_eval[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
+        
+        # 観測点に標準化された値を代入
+        init_tensor_eval[tensor_eval_bool] = standardized_tensor_eval[tensor_eval_bool]
 
+        # CP分解を実行
         cp_tensor = parafac(
             init_tensor_eval,
             rank=self.cp_rank,
@@ -268,75 +354,88 @@ class ParafacSampler(BaseSampler):
         )
         return cp_to_tensor(cp_tensor)
 
-    # def _calculate_mean_std_tensors(
-    #     self,
-    #     tensors_list: list[np.ndarray],
-    #     tensor_eval: np.ndarray,
-    #     tensor_eval_bool: np.ndarray,
-    # ) -> tuple[np.ndarray, np.ndarray]:
-    #     tensors_stack = np.stack(tensors_list)
-    #     mean_tensor = np.mean(tensors_stack, axis=0)
-    #     std_tensor = np.std(tensors_stack, axis=0)
-    #     mean_tensor[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
-    #     std_tensor[tensor_eval_bool] = 0
-    #     return mean_tensor, std_tensor
-    
     def _calculate_mean_std_tensors(
         self,
         tensors_list: list[np.ndarray],
         tensor_eval: np.ndarray,
         tensor_eval_bool: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        # Stack the list of tensors into a 3D array
         tensors_stack = np.stack(tensors_list)
-
-
-
-
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        ##################################################
-        # 多分平均と分散の埋め方が間違っている（というかそうであってほしい）
-
-
-
-
-
-        # Calculate mean and standard deviation across tensors for standardization
-        stack_mean = np.mean(tensors_stack, axis=0, keepdims=True)
-        stack_std = np.std(tensors_stack, axis=0, keepdims=True)
-        standardized_stack = (tensors_stack - stack_mean) / (stack_std + 1e-8)  # Avoid division by zero
-
-        # Calculate mean and standard deviation from the standardized tensors
-        mean_tensor = np.mean(standardized_stack, axis=0)
-        std_tensor = np.std(standardized_stack, axis=0)
-
-        # Replace elements in evaluated positions
+        mean_tensor = np.mean(tensors_stack, axis=0)
+        std_tensor = np.std(tensors_stack, axis=0)
         mean_tensor[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
         std_tensor[tensor_eval_bool] = 0
 
+
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+        ##################################################
+
+        # Debuging
+        self.mean_tensor = mean_tensor
+        self.std_tensor = std_tensor
+
         return mean_tensor, std_tensor
+    
+    # def _calculate_mean_std_tensors(
+    #     self,
+    #     tensors_list: list[np.ndarray],
+    #     tensor_eval: np.ndarray,
+    #     tensor_eval_bool: np.ndarray,
+    # ) -> tuple[np.ndarray, np.ndarray]:
+    #     # Stack the list of tensors into a 3D array
+    #     tensors_stack = np.stack(tensors_list)
+
+
+
+
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     ##################################################
+    #     # 多分平均と分散の埋め方が間違っている（というかそうであってほしい）
+
+
+
+
+
+    #     # Calculate mean and standard deviation across tensors for standardization
+    #     stack_mean = np.mean(tensors_stack, axis=0, keepdims=True)
+    #     stack_std = np.std(tensors_stack, axis=0, keepdims=True)
+    #     standardized_stack = (tensors_stack - stack_mean) / (stack_std + 1e-8)  # Avoid division by zero
+
+    #     # Calculate mean and standard deviation from the standardized tensors
+    #     mean_tensor = np.mean(standardized_stack, axis=0)
+    #     std_tensor = np.std(standardized_stack, axis=0)
+
+    #     # Replace elements in evaluated positions
+    #     mean_tensor[tensor_eval_bool] = tensor_eval[tensor_eval_bool]
+    #     std_tensor[tensor_eval_bool] = 0
+
+    #     return mean_tensor, std_tensor
 
     def _suggest_ucb_candidates(
         self,
